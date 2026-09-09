@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04070a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<title>Plan de Wessel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#04070a;
+  --panel:#080d12;
+  --panel-2:#0b1219;
+  --edge:#153025;
+  --grid:#0c2419;
+  --axis:#1d5b41;
+  --phos:#4dff9a;
+  --phos-dim:#2f9c66;
+  --phos-faint:#1a5638;
+  --beam:#7de3ff;
+  --beam-dim:#3f8fa6;
+  --solve:#ffb454;
+  --alert:#ff6a5e;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --disp:"Share Tech Mono","IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--void);
+  color:var(--phos);
+  font-family:var(--mono);
+  font-size:14px;
+  line-height:1.55;
+  padding:18px 16px 40px;
+  padding-bottom:calc(40px + env(safe-area-inset-bottom));
+  background-image:radial-gradient(120% 70% at 50% -10%,#0a1a14 0%,var(--void) 62%);
+  min-height:100vh;
+}
+.shell{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+
+/* ---------- en-tete ---------- */
+.masthead{display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--edge);padding-bottom:12px}
+.masthead h1{
+  font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,7vw,2.3rem);
+  margin:0;letter-spacing:.14em;text-shadow:0 0 14px rgba(77,255,154,.35);
+}
+.masthead .sub{margin:0;color:var(--phos-dim);font-size:.78rem;letter-spacing:.05em}
+.thesis{margin:0;color:var(--phos-dim);font-size:.8rem;max-width:62ch}
+.thesis b{color:var(--phos);font-weight:500}
+
+/* ---------- disposition ---------- */
+.work{display:flex;flex-direction:column;gap:18px}
+@media(min-width:920px){
+  .work{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);align-items:start;gap:22px}
+  .console{position:sticky;top:18px}
+}
+
+/* ---------- console ---------- */
+.console{display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{
+  font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--phos-dim);
+  display:flex;align-items:center;gap:8px;
+}
+.field label .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.dot.c1{background:var(--phos);box-shadow:0 0 8px var(--phos)}
+.dot.c2{background:var(--beam);box-shadow:0 0 8px var(--beam)}
+.field input{
+  width:100%;background:var(--panel);border:1px solid var(--edge);border-radius:3px;
+  color:var(--phos);font-family:var(--mono);font-size:1.05rem;font-weight:500;
+  padding:11px 12px;letter-spacing:.02em;
+}
+.field input::placeholder{color:var(--phos-faint)}
+.field input:focus{outline:none;border-color:var(--phos-dim);box-shadow:0 0 0 1px var(--phos-dim),0 0 18px rgba(77,255,154,.12)}
+.field.bad input{border-color:var(--alert)}
+.field.c2 input:focus{border-color:var(--beam-dim);box-shadow:0 0 0 1px var(--beam-dim),0 0 18px rgba(125,227,255,.12)}
+
+.keypad{display:flex;flex-wrap:wrap;gap:5px}
+.keypad button{
+  background:var(--panel-2);border:1px solid var(--edge);color:var(--phos-dim);
+  font-family:var(--mono);font-size:.9rem;padding:7px 10px;border-radius:3px;
+  min-width:34px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.keypad button:active{background:var(--phos);color:var(--void);border-color:var(--phos)}
+.keypad button:focus-visible{outline:2px solid var(--phos);outline-offset:1px}
+
+.samples{display:flex;flex-direction:column;gap:5px}
+.samples .cap{font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--phos-dim)}
+.samples .row{display:flex;flex-wrap:wrap;gap:6px}
+.samples button{
+  background:transparent;border:1px dashed var(--edge);color:var(--phos-dim);
+  font-family:var(--mono);font-size:.78rem;padding:6px 9px;border-radius:3px;cursor:pointer;
+}
+.samples button:active,.samples button:hover{color:var(--phos);border-color:var(--phos-dim)}
+.samples button:focus-visible{outline:2px solid var(--phos);outline-offset:1px}
+
+/* ---------- ecran ---------- */
+.scope{display:flex;flex-direction:column;gap:0}
+.scope-frame{
+  position:relative;border:1px solid var(--edge);border-radius:4px;overflow:hidden;
+  background:#030608;
+}
+canvas{display:block;width:100%;height:auto;touch-action:none}
+.scanlines{
+  position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,.22) 0 1px,transparent 1px 3px);
+  mix-blend-mode:multiply;
+}
+.vignette{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 90px rgba(0,0,0,.85)}
+.scope-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border:1px solid var(--edge);border-top:none;border-radius:0 0 4px 4px;
+  padding:7px 10px;background:var(--panel);font-size:.7rem;color:var(--phos-dim);
+  letter-spacing:.08em;
+}
+.scope-bar button{
+  background:transparent;border:1px solid var(--edge);color:var(--phos-dim);
+  font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;padding:5px 10px;
+  border-radius:3px;cursor:pointer;
+}
+.scope-bar button:active{background:var(--phos);color:var(--void)}
+.scope-bar button:focus-visible{outline:2px solid var(--phos);outline-offset:1px}
+
+/* ---------- lecture ---------- */
+.readout{display:flex;flex-direction:column;gap:16px}
+.block{display:flex;flex-direction:column;gap:7px}
+.block h2{
+  margin:0;font-family:var(--mono);font-weight:500;font-size:.66rem;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--phos-dim);
+}
+.block h2 .eq{text-transform:none;letter-spacing:.02em;color:var(--phos-faint)}
+.block p{margin:0}
+.line{
+  border-left:2px solid var(--phos-faint);padding-left:11px;
+  font-size:.95rem;color:var(--phos);
+}
+.line.beam{border-left-color:var(--beam-dim);color:var(--beam)}
+.line .tag{display:block;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--phos-dim);margin-bottom:1px}
+.line.beam .tag{color:var(--beam-dim)}
+.sol{
+  border:1px solid rgba(255,180,84,.35);border-radius:3px;background:rgba(255,180,84,.05);
+  padding:11px 13px;color:var(--solve);font-size:1.05rem;
+}
+.sol .tag{display:block;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,180,84,.65);margin-bottom:4px}
+.sol .approx{display:block;font-size:.78rem;color:rgba(255,180,84,.7);margin-top:5px;letter-spacing:.02em}
+.err{border-left:2px solid var(--alert);padding-left:11px;color:var(--alert);font-size:.88rem}
+.note{color:var(--phos-dim);font-size:.78rem;max-width:62ch}
+
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .16em;font-size:.92em}
+.frac .num{border-bottom:1px solid currentColor;padding:0 .28em;line-height:1.2}
+.frac .den{padding:0 .28em;line-height:1.2}
+
+footer{border-top:1px solid var(--edge);padding-top:12px;color:var(--phos-faint);font-size:.72rem}
+footer a{color:var(--phos-dim)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="masthead">
+    <h1>PLAN DE WESSEL</h1>
+    <p class="sub">resolution exacte &middot; trace en direct &middot; d'apres Caspar Wessel, 1797</p>
+    <p class="thesis">Une equation complexe, c'est <b>deux equations reelles</b> : la partie reelle et la partie imaginaire. Chacune trace une droite (ou un cercle). La solution est leur <b>intersection</b>.</p>
+  </header>
+
+  <div class="work">
+
+    <section class="console">
+      <div class="field" id="f1">
+        <label for="eq1"><span class="dot c1"></span>Condition 1</label>
+        <input id="eq1" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" value="3 + 2z = iz - 4">
+      </div>
+
+      <div class="field c2" id="f2">
+        <label for="eq2"><span class="dot c2"></span>Condition 2 &mdash; optionnelle</label>
+        <input id="eq2" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" placeholder="ex : |z - 1| = 2">
+      </div>
+
+      <div class="keypad" id="keypad">
+        <button type="button" data-ins="z">z</button>
+        <button type="button" data-ins="i">i</button>
+        <button type="button" data-ins="+">+</button>
+        <button type="button" data-ins="-">&minus;</button>
+        <button type="button" data-ins="*">&times;</button>
+        <button type="button" data-ins="/">/</button>
+        <button type="button" data-ins="=">=</button>
+        <button type="button" data-ins="(">(</button>
+        <button type="button" data-ins=")">)</button>
+        <button type="button" data-ins="|">|</button>
+        <button type="button" data-ins="^2">^2</button>
+        <button type="button" data-ins="Re(">Re(</button>
+        <button type="button" data-ins="Im(">Im(</button>
+        <button type="button" data-ins="conj(">conj(</button>
+      </div>
+
+      <div class="samples">
+        <span class="cap">Exemples</span>
+        <div class="row" id="samples"></div>
+      </div>
+    </section>
+
+    <section class="scope">
+      <div class="scope-frame">
+        <canvas id="cv" width="600" height="600"></canvas>
+        <div class="scanlines"></div>
+        <div class="vignette"></div>
+      </div>
+      <div class="scope-bar">
+        <span id="viewinfo">&nbsp;</span>
+        <button type="button" id="fit">CADRER</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="readout" id="readout"></section>
+
+  <footer>
+    Glisser pour deplacer, pincer ou molette pour zoomer.
+    Ecrit <code>z</code> pour l'inconnue, <code>conj(z)</code> pour le conjugue, <code>|...|</code> pour le module.
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ==================================================================
+   1. Nombres complexes
+   ================================================================== */
+const C = (re, im = 0) => ({ re, im });
+const cadd  = (u, v) => C(u.re + v.re, u.im + v.im);
+const csub  = (u, v) => C(u.re - v.re, u.im - v.im);
+const cmul  = (u, v) => C(u.re * v.re - u.im * v.im, u.re * v.im + u.im * v.re);
+const cconj = (u) => C(u.re, -u.im);
+const cabs  = (u) => Math.hypot(u.re, u.im);
+const cneg  = (u) => C(-u.re, -u.im);
+const cdiv  = (u, v) => {
+  const d = v.re * v.re + v.im * v.im;
+  if (d === 0) throw new Err("division par zero");
+  return C((u.re * v.re + u.im * v.im) / d, (u.im * v.re - u.re * v.im) / d);
+};
+const czero = (u, e = 1e-11) => Math.hypot(u.re, u.im) < e;
+const ZERO = C(0, 0), ONE = C(1, 0), I = C(0, 1);
+
+function Err(msg) { this.message = msg; }
+Err.prototype.toString = function () { return this.message; };
+
+/* ==================================================================
+   2. Forme normale d'une expression
+      F(z) = q|z|^2 + a.z + b.conj(z) + c + somme( k_j * |A_j| )
+      q, a, b, c, k : complexes.  A_j : forme affine (a,b,c).
+   ================================================================== */
+const F0 = () => ({ q: ZERO, a: ZERO, b: ZERO, c: ZERO, mods: [] });
+const fconst = (v) => ({ q: ZERO, a: ZERO, b: ZERO, c: v, mods: [] });
+const fz     = () => ({ q: ZERO, a: ONE, b: ZERO, c: ZERO, mods: [] });
+
+const isConst  = (F) => czero(F.q) && czero(F.a) && czero(F.b) && F.mods.length === 0;
+const isAffine = (F) => czero(F.q) && F.mods.length === 0;
+const isPureMod = (F) => czero(F.q) && czero(F.a) && czero(F.b) && czero(F.c) && F.mods.length === 1;
+
+const fscale = (F, k) => ({
+  q: cmul(k, F.q), a: cmul(k, F.a), b: cmul(k, F.b), c: cmul(k, F.c),
+  mods: F.mods.map(m => ({ k: cmul(k, m.k), f: m.f }))
+});
+const fadd = (F, G) => ({
+  q: cadd(F.q, G.q), a: cadd(F.a, G.a), b: cadd(F.b, G.b), c: cadd(F.c, G.c),
+  mods: F.mods.concat(G.mods)
+});
+const fsub = (F, G) => fadd(F, fscale(G, C(-1)));
+
+const fconj = (F) => ({
+  q: cconj(F.q), a: cconj(F.b), b: cconj(F.a), c: cconj(F.c),
+  mods: F.mods.map(m => ({ k: cconj(m.k), f: m.f }))
+});
+const fre = (F) => fscale(fadd(F, fconj(F)), C(0.5));
+const fim = (F) => fscale(fsub(F, fconj(F)), C(0, -0.5));
+
+function fabsv(F) {
+  if (!isAffine(F)) throw new Err("module d'une expression non lineaire : non supporte");
+  return { q: ZERO, a: ZERO, b: ZERO, c: ZERO, mods: [{ k: ONE, f: { a: F.a, b: F.b, c: F.c } }] };
+}
+
+function fmul(F, G) {
+  if (isConst(F)) return fscale(G, F.c);
+  if (isConst(G)) return fscale(F, G.c);
+  // |A| * |A|  ->  A * conj(A)
+  if (isPureMod(F) && isPureMod(G) && sameAff(F.mods[0].f, G.mods[0].f)) {
+    const A = { q: ZERO, ...F.mods[0].f, mods: [] };
+    const k = cmul(F.mods[0].k, G.mods[0].k);
+    return fscale(fmul(A, fconj(A)), k);
+  }
+  if (isAffine(F) && isAffine(G)) {
+    if (!czero(cmul(F.a, G.a))) throw new Err("terme en z^2 : l'equation n'est pas lineaire");
+    if (!czero(cmul(F.b, G.b))) throw new Err("terme en conj(z)^2 : non supporte");
+    return {
+      q: cadd(cmul(F.a, G.b), cmul(F.b, G.a)),
+      a: cadd(cmul(F.a, G.c), cmul(F.c, G.a)),
+      b: cadd(cmul(F.b, G.c), cmul(F.c, G.b)),
+      c: cmul(F.c, G.c),
+      mods: []
+    };
+  }
+  throw new Err("produit trop complique pour ce solveur");
+}
+function sameAff(x, y) {
+  return czero(csub(x.a, y.a)) && czero(csub(x.b, y.b)) && czero(csub(x.c, y.c));
+}
+function fdiv(F, G) {
+  if (!isConst(G)) throw new Err("division par une expression contenant z : non supportee");
+  return fscale(F, cdiv(ONE, G.c));
+}
+function fpow(F, n) {
+  if (!Number.isInteger(n) || n < 0 || n > 6) throw new Err("exposant invalide (entier de 0 a 6)");
+  let r = fconst(ONE);
+  for (let k = 0; k < n; k++) r = fmul(r, F);
+  return r;
+}
+
+/* ==================================================================
+   3. Lecture du texte  ->  forme normale
+   ================================================================== */
+function normalize(src) {
+  return src
+    .replace(/−/g, "-").replace(/[×·•]/g, "*").replace(/÷/g, "/")
+    .replace(/[‘’]/g, "").replace(/²/g, "^2").replace(/³/g, "^3")
+    .replace(/z̄|ƶ|z̅/g, "conj(z)")
+    .replace(/,(\d)/g, ".$1")
+    .replace(/\s+/g, "");
+}
+
+function tokenize(src) {
+  const s = normalize(src), out = [];
+  let p = 0;
+  while (p < s.length) {
+    const ch = s[p];
+    if (/[0-9.]/.test(ch)) {
+      let j = p; while (j < s.length && /[0-9.]/.test(s[j])) j++;
+      const v = parseFloat(s.slice(p, j));
+      if (!isFinite(v)) throw new Err("nombre illisible : " + s.slice(p, j));
+      out.push({ t: "num", v }); p = j; continue;
+    }
+    if (/[A-Za-z]/.test(ch)) {
+      let j = p; while (j < s.length && /[A-Za-z]/.test(s[j])) j++;
+      let w = s.slice(p, j);
+      // decoupe les suites de variables collees : "iz" -> "i","z"
+      const known = ["conj", "Re", "Im", "re", "im", "abs", "mod"];
+      if (known.includes(w)) { out.push({ t: "fn", v: w.toLowerCase() }); p = j; continue; }
+      for (const c of w) {
+        const lc = c.toLowerCase();
+        if (lc === "i") out.push({ t: "i" });
+        else if (lc === "z") out.push({ t: "z" });
+        else throw new Err("symbole inconnu : " + c);
+      }
+      p = j; continue;
+    }
+    if ("+-*/^()|=".includes(ch)) { out.push({ t: ch }); p++; continue; }
+    throw new Err("caractere inattendu : " + ch);
+  }
+  return out;
+}
+
+function parseExpr(tokens) {
+  let p = 0, bars = 0;
+  const peek = () => tokens[p];
+  const eat = (t) => { if (!tokens[p] || tokens[p].t !== t) throw new Err("il manque " + t); return tokens[p++]; };
+
+  function startsPrimary(tk) {
+    if (!tk) return false;
+    if (tk.t === "|") return bars === 0;         // dans une barre, | ferme
+    return ["num", "i", "z", "fn", "("].includes(tk.t);
+  }
+  function expr() {
+    let v = term();
+    while (peek() && (peek().t === "+" || peek().t === "-")) {
+      const op = tokens[p++].t, r = term();
+      v = op === "+" ? fadd(v, r) : fsub(v, r);
+    }
+    return v;
+  }
+  function term() {
+    let v = unary();
+    for (;;) {
+      const tk = peek();
+      if (tk && (tk.t === "*" || tk.t === "/")) { p++; const r = unary(); v = tk.t === "*" ? fmul(v, r) : fdiv(v, r); }
+      else if (startsPrimary(tk)) { const r = unary(); v = fmul(v, r); }   // produit implicite : 2z, iz
+      else return v;
+    }
+  }
+  function unary() {
+    const tk = peek();
+    if (tk && tk.t === "-") { p++; return fscale(unary(), C(-1)); }
+    if (tk && tk.t === "+") { p++; return unary(); }
+    return power();
+  }
+  function power() {
+    const base = primary();
+    if (peek() && peek().t === "^") {
+      p++;
+      let sign = 1;
+      if (peek() && peek().t === "-") { p++; sign = -1; }
+      const e = eat("num").v * sign;
+      if (sign < 0) throw new Err("exposant negatif : non supporte");
+      return fpow(base, e);
+    }
+    return base;
+  }
+  function primary() {
+    const tk = peek();
+    if (!tk) throw new Err("expression incomplete");
+    if (tk.t === "num") { p++; return fconst(C(tk.v)); }
+    if (tk.t === "i")   { p++; return fconst(I); }
+    if (tk.t === "z")   { p++; return fz(); }
+    if (tk.t === "(")   { p++; const v = expr(); eat(")"); return v; }
+    if (tk.t === "|")   { p++; bars++; const v = expr(); bars--; eat("|"); return fabsv(v); }
+    if (tk.t === "fn") {
+      p++; eat("(");
+      const v = expr(); eat(")");
+      switch (tk.v) {
+        case "conj": return fconj(v);
+        case "re":   return fre(v);
+        case "im":   return fim(v);
+        case "abs": case "mod": return fabsv(v);
+      }
+    }
+    throw new Err("expression mal formee");
+  }
+
+  const v = expr();
+  if (p !== tokens.length) throw new Err("expression mal formee");
+  return v;
+}
+
+/* Une equation "gauche = droite" -> forme normale de (gauche - droite). */
+function parseEquation(src) {
+  const tokens = tokenize(src);
+  const cut = tokens.findIndex(t => t.t === "=");
+  if (cut < 0) throw new Err("il manque le signe = ");
+  if (tokens.slice(cut + 1).some(t => t.t === "=")) throw new Err("un seul signe = par condition");
+  const L = parseExpr(tokens.slice(0, cut));
+  const R = parseExpr(tokens.slice(cut + 1));
+  return fsub(L, R);
+}
+
+/* ==================================================================
+   4. Forme normale  ->  courbes  A|z|^2 + 2Re(W z) + K = 0
+      A = 0 : droite      A != 0 : cercle
+   ================================================================== */
+const GC = (A, W, K) => ({ A, W, K });
+
+function toCurves(F) {
+  if (F.mods.length === 0) {
+    // equation complexe = partie reelle + partie imaginaire
+    const cRe = GC(F.q.re, fmulHalf(cadd(F.a, cconj(F.b))), F.c.re);
+    const cIm = GC(F.q.im, fmulHalf(cmul(C(0, -1), csub(F.a, cconj(F.b)))), F.c.im);
+    const out = [];
+    if (!isTrivialZero(cRe)) out.push({ ...cRe, part: "Partie reelle" });
+    if (!isTrivialZero(cIm)) out.push({ ...cIm, part: "Partie imaginaire" });
+    if (out.length === 0) return { curves: [], all: true };
+    return { curves: out, all: false };
+  }
+  // conditions avec module
+  const rest = { q: F.q, a: F.a, b: F.b, c: F.c };
+  if (F.mods.length === 1) {
+    const m = F.mods[0];
+    if (!czero(rest.q) || !czero(rest.a) || !czero(rest.b)) throw new Err("forme non supportee : melange module / partie lineaire");
+    if (Math.abs(m.k.im) > 1e-11 || Math.abs(rest.c.im) > 1e-11) throw new Err("condition non reelle : non supportee");
+    const r = -rest.c.re / m.k.re;                      // |A| = r
+    if (!isFinite(r)) throw new Err("condition impossible a interpreter");
+    if (r < -1e-12) return { curves: [], none: true };
+    const A = affNoConj(m.f);
+    const n = cabs(A.a) ** 2;
+    return { curves: [{ ...GC(n, cmul(A.a, cconj(A.c)), cabs(A.c) ** 2 - r * r), part: "Module" }], all: false };
+  }
+  if (F.mods.length === 2) {
+    const [m1, m2] = F.mods;
+    if (!czero(rest.q) || !czero(rest.a) || !czero(rest.b) || !czero(rest.c))
+      throw new Err("forme non supportee (ellipse ou hyperbole)");
+    if (Math.abs(m1.k.im) > 1e-11 || Math.abs(m2.k.im) > 1e-11) throw new Err("condition non reelle : non supportee");
+    if (Math.abs(m1.k.re + m2.k.re) > 1e-11 || Math.abs(m1.k.re) < 1e-11)
+      throw new Err("forme non supportee (ellipse ou hyperbole)");
+    const A = affNoConj(m1.f), B = affNoConj(m2.f);
+    return {
+      curves: [{
+        ...GC(cabs(A.a) ** 2 - cabs(B.a) ** 2,
+              csub(cmul(A.a, cconj(A.c)), cmul(B.a, cconj(B.c))),
+              cabs(A.c) ** 2 - cabs(B.c) ** 2),
+        part: "Equidistance"
+      }], all: false
+    };
+  }
+  throw new Err("trop de modules dans cette condition");
+}
+const fmulHalf = (w) => C(w.re / 2, w.im / 2);
+const isTrivialZero = (g) => Math.abs(g.A) < 1e-12 && czero(g.W) && Math.abs(g.K) < 1e-12;
+
+/* |a z + b conj(z) + c| : ramene au cas b = 0 quand c'est possible */
+function affNoConj(f) {
+  if (czero(f.b)) return { a: f.a, c: f.c };
+  if (czero(f.a)) return { a: cconj(f.b), c: cconj(f.c) };   // |b zbar + c| = |conj(b) z + conj(c)|
+  throw new Err("module contenant a la fois z et conj(z) : non supporte");
+}
+
+/* ==================================================================
+   5. Geometrie exacte
+   ================================================================== */
+function normCurve(g) {
+  if (Math.abs(g.A) > 1e-12) {
+    const s = 1 / g.A;
+    return GC(1, C(g.W.re * s, g.W.im * s), g.K * s);
+  }
+  const n = Math.hypot(2 * g.W.re, 2 * g.W.im);
+  if (n < 1e-14) return GC(0, ZERO, g.K);
+  return GC(0, C(g.W.re / n, g.W.im / n), g.K / n);
+}
+const lineNormal = (g) => ({ nx: 2 * g.W.re, ny: -2 * g.W.im, c: g.K });   // nx*x + ny*y + c = 0
+function circleData(g) {
+  const n = normCurve(g);
+  const center = C(-n.W.re, n.W.im);                 // -conj(W)
+  const r2 = n.W.re * n.W.re + n.W.im * n.W.im - n.K;
+  return { center, r2, r: r2 > 0 ? Math.sqrt(r2) : 0 };
+}
+const isLine = (g) => Math.abs(g.A) < 1e-12;
+
+function residual(g, z) {
+  const m2 = z.re * z.re + z.im * z.im;
+  const re = g.W.re * z.re - g.W.im * z.im;          // Re(W z)
+  const val = g.A * m2 + 2 * re + g.K;
+  const scale = Math.abs(g.A) * m2 + 2 * cabs(g.W) * Math.sqrt(m2) + Math.abs(g.K) + 1;
+  return Math.abs(val) / scale;
+}
+
+function interLineLine(g1, g2) {
+  const a = lineNormal(normCurve(g1)), b = lineNormal(normCurve(g2));
+  const det = a.nx * b.ny - a.ny * b.nx;
+  if (Math.abs(det) < 1e-11) {
+    const coincident = Math.abs(a.nx * b.c - b.nx * a.c) < 1e-9 && Math.abs(a.ny * b.c - b.ny * a.c) < 1e-9;
+    return coincident ? { kind: "same" } : { kind: "none" };
+  }
+  const x = (-a.c * b.ny + b.c * a.ny) / det;
+  const y = (-a.nx * b.c + b.nx * a.c) / det;
+  return { kind: "points", pts: [C(x, y)] };
+}
+function interLineCircle(gl, gc) {
+  const L = normCurve(gl), K = circleData(gc);
+  const nx = 2 * L.W.re, ny = -2 * L.W.im, c = L.K;
+  const nn = Math.hypot(nx, ny);
+  if (nn < 1e-14) return { kind: "none" };
+  const ux = nx / nn, uy = ny / nn, cc = c / nn;
+  const P0 = C(-cc * ux, -cc * uy);                 // pied de la perpendiculaire depuis O
+  const dx = -uy, dy = ux;
+  const wx = P0.re - K.center.re, wy = P0.im - K.center.im;
+  const bq = wx * dx + wy * dy;
+  const cq = wx * wx + wy * wy - K.r2;
+  let disc = bq * bq - cq;
+  if (disc < -1e-9 * (1 + Math.abs(cq))) return { kind: "none" };
+  if (disc < 0) disc = 0;
+  const s = Math.sqrt(disc);
+  const t1 = -bq - s, t2 = -bq + s;
+  const pts = [C(P0.re + t1 * dx, P0.im + t1 * dy)];
+  if (s > 1e-9) pts.push(C(P0.re + t2 * dx, P0.im + t2 * dy));
+  return { kind: "points", pts };
+}
+function interCircleCircle(g1, g2) {
+  const A = normCurve(g1), B = normCurve(g2);
+  const rad = GC(0, csub(A.W, B.W), A.K - B.K);      // axe radical
+  if (czero(rad.W)) return Math.abs(rad.K) < 1e-9 ? { kind: "same" } : { kind: "none" };
+  return interLineCircle(rad, A);
+}
+function intersect(g1, g2) {
+  if (isLine(g1) && isLine(g2)) return interLineLine(g1, g2);
+  if (isLine(g1)) return interLineCircle(g1, g2);
+  if (isLine(g2)) return interLineCircle(g2, g1);
+  return interCircleCircle(g1, g2);
+}
+
+/* ==================================================================
+   6. Ecriture des nombres
+   ================================================================== */
+function frac(x) {
+  if (!isFinite(x)) return null;
+  if (Math.abs(x) > 1e6) return null;
+  const sign = x < 0 ? -1 : 1;
+  let v = Math.abs(x), p0 = 1, q0 = 0, p1 = Math.floor(v), q1 = 1, rest = v - p1;
+  for (let k = 0; k < 24 && q1 <= 100000; k++) {
+    if (Math.abs(p1 / q1 - v) <= 1e-11 * Math.max(1, v)) {
+      if (q1 === 0) return null;
+      return { p: sign * p1, q: q1 };
+    }
+    if (rest < 1e-13) break;
+    const inv = 1 / rest, ai = Math.floor(inv);
+    rest = inv - ai;
+    const p2 = ai * p1 + p0, q2 = ai * q1 + q0;
+    p0 = p1; q0 = q1; p1 = p2; q1 = q2;
+  }
+  return Math.abs(p1 / q1 - v) <= 1e-11 * Math.max(1, v) ? { p: sign * p1, q: q1 } : null;
+}
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+function num2html(x, unit) {
+  const u = unit || "";
+  if (Math.abs(x) < 1e-13) return "0";
+  const f = frac(x);
+  if (f && f.q === 1) return (f.p === 1 && u ? "" : f.p === -1 && u ? "-" : String(f.p)) + u;
+  if (f && f.q <= 9999) {
+    const n = Math.abs(f.p) === 1 && u ? (f.p < 0 ? "-" : "") + u : f.p + u;
+    return '<span class="frac"><span class="num">' + esc(n) + '</span><span class="den">' + f.q + "</span></span>";
+  }
+  return esc(round(x, 6)) + u;
+}
+const round = (x, n) => {
+  const r = Number(x.toFixed(n));
+  return Object.is(r, -0) ? 0 : r;
+};
+function z2html(z) {
+  const re = Math.abs(z.re) < 1e-13 ? 0 : z.re, im = Math.abs(z.im) < 1e-13 ? 0 : z.im;
+  if (im === 0) return num2html(re);
+  if (re === 0) return (im < 0 ? "-" : "") + num2html(Math.abs(im), "i");
+  return num2html(re) + (im < 0 ? " &minus; " : " + ") + num2html(Math.abs(im), "i");
+}
+function z2short(z) { return round(z.re, 3) + (z.im < 0 ? " - " : " + ") + Math.abs(round(z.im, 3)) + "i"; }
+
+/* ecriture lisible d'une droite ou d'un cercle */
+function curve2html(g) {
+  if (isLine(g)) {
+    const nx = 2 * g.W.re, ny = -2 * g.W.im, c = g.K;
+    if (Math.abs(nx) < 1e-12 && Math.abs(ny) < 1e-12) return Math.abs(c) < 1e-12 ? "tout le plan" : "aucun point";
+    // on divise par le plus petit coefficient non nul pour rester lisible
+    let k = [nx, ny].filter(v => Math.abs(v) > 1e-12).map(Math.abs).sort((a, b) => a - b)[0];
+    if ((Math.abs(nx) > 1e-12 ? nx : ny) < 0) k = -k;      // on garde le premier terme positif
+    const A = nx / k, B = ny / k, D = -c / k;
+    const parts = [];
+    if (Math.abs(A) > 1e-12) parts.push(num2html(A, "x"));
+    if (Math.abs(B) > 1e-12) parts.push((B < 0 ? "&minus; " : parts.length ? "+ " : "") + num2html(Math.abs(B), "y"));
+    return "droite : " + parts.join(" ") + " = " + num2html(D);
+  }
+  const d = circleData(g);
+  if (d.r2 < -1e-12) return "aucun point";
+  if (d.r2 < 1e-12) return "point unique : z = " + z2html(d.center);
+  const rf = frac(d.r2);
+  const rTxt = (rf && rf.q === 1 && Number.isInteger(Math.sqrt(rf.p))) ? num2html(Math.sqrt(rf.p)) : "&radic;(" + esc(round(d.r2, 6)) + ")";
+  return "cercle : centre " + z2html(d.center) + ", rayon " + rTxt;
+}
+
+/* ==================================================================
+   7. Resolution complete
+   ================================================================== */
+function solveAll(conds) {
+  const curves = [];
+  for (const c of conds) for (const g of c.curves) curves.push(g);
+  if (conds.some(c => c.none)) return { kind: "empty" };
+  if (curves.length === 0) return { kind: "plane" };
+  if (curves.length === 1) return { kind: "curve", curve: curves[0] };
+
+  let res = null;
+  outer:
+  for (let a = 0; a < curves.length; a++) {
+    for (let b = a + 1; b < curves.length; b++) {
+      const r = intersect(curves[a], curves[b]);
+      if (r.kind === "none") return { kind: "empty" };
+      if (r.kind === "points") { res = r; break outer; }
+    }
+  }
+  if (!res) return { kind: "curve", curve: curves[0] };      // toutes les courbes confondues
+
+  const pts = res.pts.filter(z => curves.every(g => residual(g, z) < 1e-7));
+  if (pts.length === 0) return { kind: "empty" };
+  return { kind: "points", pts };
+}
+
+/* ==================================================================
+   8. Ecran
+   ================================================================== */
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+const view = { cx: 0, cy: 0, scale: 48 };
+let state = { conds: [], sol: null };
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = cv.parentElement.clientWidth;
+  const tall = window.innerWidth >= 920 ? 0.74 : 0.5;
+  const h = Math.max(280, Math.min(w, Math.round(window.innerHeight * tall)));
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  cv.style.height = h + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+const W = () => cv.width / (Math.min(window.devicePixelRatio || 1, 2));
+const H = () => cv.height / (Math.min(window.devicePixelRatio || 1, 2));
+const sx = (x) => W() / 2 + (x - view.cx) * view.scale;
+const sy = (y) => H() / 2 - (y - view.cy) * view.scale;
+const mx = (px) => view.cx + (px - W() / 2) / view.scale;
+const my = (py) => view.cy - (py - H() / 2) / view.scale;
+
+function niceStep(target) {
+  const raw = target / view.scale;
+  const e = Math.pow(10, Math.floor(Math.log10(raw)));
+  const m = raw / e;
+  return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * e;
+}
+
+function draw() {
+  const w = W(), h = H();
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#030608"; ctx.fillRect(0, 0, w, h);
+
+  const step = niceStep(64);
+  const x0 = Math.floor(mx(0) / step) * step, x1 = mx(w);
+  const y0 = Math.floor(my(h) / step) * step, y1 = my(0);
+
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "#0c2419";
+  ctx.beginPath();
+  for (let x = x0; x <= x1; x += step) { const p = Math.round(sx(x)) + 0.5; ctx.moveTo(p, 0); ctx.lineTo(p, h); }
+  for (let y = y0; y <= y1; y += step) { const p = Math.round(sy(y)) + 0.5; ctx.moveTo(0, p); ctx.lineTo(w, p); }
+  ctx.stroke();
+
+  // axes
+  ctx.strokeStyle = "#1d5b41"; ctx.lineWidth = 1.2;
+  const ax = Math.round(sy(0)) + 0.5, ay = Math.round(sx(0)) + 0.5;
+  ctx.beginPath(); ctx.moveTo(0, ax); ctx.lineTo(w, ax); ctx.moveTo(ay, 0); ctx.lineTo(ay, h); ctx.stroke();
+
+  // graduations
+  ctx.fillStyle = "#2f9c66";
+  ctx.font = '11px "IBM Plex Mono", monospace';
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  const clampY = Math.min(Math.max(ax, 2), h - 16);
+  for (let x = x0; x <= x1; x += step) {
+    if (Math.abs(x) < step / 2) continue;
+    ctx.fillText(fmtTick(x), sx(x), clampY + 4);
+  }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  const clampX = Math.min(Math.max(ay, 26), w - 4);
+  for (let y = y0; y <= y1; y += step) {
+    if (Math.abs(y) < step / 2) continue;
+    ctx.fillText(fmtImTick(y), clampX - 5, sy(y));
+  }
+  ctx.fillStyle = "#1a5638";
+  ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+  ctx.fillText("Re", w - 8, h - 6);
+  ctx.textAlign = "left"; ctx.textBaseline = "top";
+  ctx.fillText("Im", 8, 6);
+
+  // courbes
+  state.conds.forEach((c, idx) => {
+    const col = idx === 0 ? "#4dff9a" : "#7de3ff";
+    (c.curves || []).forEach(g => drawCurve(g, col));
+  });
+
+  // solutions
+  if (state.sol && state.sol.kind === "points") state.sol.pts.forEach((z, k) => drawPoint(z, k, state.sol.pts.length));
+
+  document.getElementById("viewinfo").textContent =
+    "1 carreau = " + fmtTick(step) + "   |   zoom " + Math.round(view.scale) + " px/u";
+}
+function fmtImTick(v) {
+  const t = fmtTick(v);
+  if (t === "1") return "i";
+  if (t === "-1") return "-i";
+  return t + "i";
+}
+function fmtTick(v) {
+  const f = frac(v);
+  if (f && f.q === 1) return String(f.p);
+  if (f && f.q <= 16) return f.p + "/" + f.q;
+  return String(round(v, 4));
+}
+
+function drawCurve(g, col) {
+  ctx.save();
+  ctx.strokeStyle = col; ctx.lineWidth = 1.6;
+  ctx.shadowColor = col; ctx.shadowBlur = 8;
+  ctx.beginPath();
+  if (isLine(g)) {
+    const n = normCurve(g), nx = 2 * n.W.re, ny = -2 * n.W.im, c = n.K;
+    const nn = Math.hypot(nx, ny);
+    if (nn < 1e-14) { ctx.restore(); return; }
+    const ux = nx / nn, uy = ny / nn, cc = c / nn;
+    const px = -cc * ux, py = -cc * uy, dx = -uy, dy = ux;
+    const far = (Math.hypot(W(), H()) / view.scale) + Math.hypot(view.cx - px, view.cy - py) + 10;
+    ctx.moveTo(sx(px - far * dx), sy(py - far * dy));
+    ctx.lineTo(sx(px + far * dx), sy(py + far * dy));
+  } else {
+    const d = circleData(g);
+    if (d.r2 <= 1e-12) { ctx.restore(); if (d.r2 > -1e-12) drawDot(d.center, col); return; }
+    ctx.arc(sx(d.center.re), sy(d.center.im), d.r * view.scale, 0, Math.PI * 2);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+function drawDot(z, col) {
+  ctx.save(); ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.arc(sx(z.re), sy(z.im), 3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+}
+function drawPoint(z, k, total) {
+  const px = sx(z.re), py = sy(z.im);
+  ctx.save();
+  ctx.strokeStyle = "#ffb454"; ctx.fillStyle = "#ffb454";
+  ctx.shadowColor = "#ffb454"; ctx.shadowBlur = 12; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(px - 11, py); ctx.lineTo(px - 4, py);
+  ctx.moveTo(px + 4, py); ctx.lineTo(px + 11, py);
+  ctx.moveTo(px, py - 11); ctx.lineTo(px, py - 4);
+  ctx.moveTo(px, py + 4); ctx.lineTo(px, py + 11); ctx.stroke();
+  ctx.beginPath(); ctx.arc(px, py, 4.5, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(px, py, 1.8, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.font = '12px "IBM Plex Mono", monospace';
+  ctx.textBaseline = "bottom";
+  const label = (total > 1 ? "z" + (k + 1) + " = " : "z = ") + z2short(z);
+  const wide = ctx.measureText(label).width;
+  const left = px + 14 + wide > W() - 34;
+  ctx.textAlign = left ? "right" : "left";
+  ctx.fillText(label, px + (left ? -14 : 14), py - 10);
+  ctx.restore();
+}
+
+function fitView() {
+  const pts = [];
+  if (state.sol && state.sol.kind === "points") pts.push(...state.sol.pts);
+  let rad = 0;
+  state.conds.forEach(c => (c.curves || []).forEach(g => {
+    if (!isLine(g)) {
+      const d = circleData(g);
+      pts.push(d.center);
+      rad = Math.max(rad, d.r);
+    }
+  }));
+  if (pts.length === 0) { view.cx = 0; view.cy = 0; view.scale = 48; draw(); return; }
+  let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
+  pts.forEach(p => { minx = Math.min(minx, p.re); maxx = Math.max(maxx, p.re); miny = Math.min(miny, p.im); maxy = Math.max(maxy, p.im); });
+  minx -= rad; maxx += rad; miny -= rad; maxy += rad;
+  const cx = (minx + maxx) / 2, cy = (miny + maxy) / 2;
+  const spanx = Math.max(maxx - minx, 6), spany = Math.max(maxy - miny, 6);
+  view.cx = cx; view.cy = cy;
+  view.scale = Math.min(W() / (spanx * 1.35), H() / (spany * 1.35));
+  view.scale = Math.max(6, Math.min(view.scale, 220));
+  draw();
+}
+function solutionVisible() {
+  if (!state.sol || state.sol.kind !== "points") return true;
+  return state.sol.pts.every(z => {
+    const px = sx(z.re), py = sy(z.im);
+    return px > 30 && px < W() - 30 && py > 30 && py < H() - 30;
+  });
+}
+
+/* ---------- navigation tactile ---------- */
+const pointers = new Map();
+let pinch = null;
+cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); pointers.set(e.pointerId, e); });
+cv.addEventListener("pointermove", e => {
+  if (!pointers.has(e.pointerId)) return;
+  const prev = pointers.get(e.pointerId);
+  pointers.set(e.pointerId, e);
+  if (pointers.size === 1) {
+    view.cx -= (e.clientX - prev.clientX) / view.scale;
+    view.cy += (e.clientY - prev.clientY) / view.scale;
+    draw();
+  } else if (pointers.size === 2) {
+    const [p, q] = [...pointers.values()];
+    const dist = Math.hypot(p.clientX - q.clientX, p.clientY - q.clientY);
+    const midx = (p.clientX + q.clientX) / 2, midy = (p.clientY + q.clientY) / 2;
+    if (pinch) {
+      const r = cv.getBoundingClientRect();
+      zoomAt(midx - r.left, midy - r.top, dist / pinch.dist);
+    }
+    pinch = { dist };
+  }
+});
+["pointerup", "pointercancel", "pointerleave"].forEach(ev =>
+  cv.addEventListener(ev, e => { pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null; }));
+cv.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r = cv.getBoundingClientRect();
+  zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.0016));
+}, { passive: false });
+function zoomAt(px, py, k) {
+  const bx = mx(px), by = my(py);
+  view.scale = Math.max(3, Math.min(view.scale * k, 4000));
+  view.cx = bx - (px - W() / 2) / view.scale;
+  view.cy = by + (py - H() / 2) / view.scale;
+  draw();
+}
+document.getElementById("fit").addEventListener("click", fitView);
+
+/* ==================================================================
+   9. Lecture affichee
+   ================================================================== */
+const readout = document.getElementById("readout");
+
+function render() {
+  const blocks = [];
+  state.conds.forEach((c, idx) => {
+    const cls = idx === 0 ? "line" : "line beam";
+    if (c.error) {
+      blocks.push('<div class="block"><h2>Condition ' + (idx + 1) + ' <span class="eq">' + esc(c.src) + '</span></h2><p class="err">' + esc(c.error) + "</p></div>");
+      return;
+    }
+    const rows = (c.curves || []).map(g =>
+      '<p class="' + cls + '"><span class="tag">' + esc(g.part) + "</span>" + curve2html(g) + "</p>").join("");
+    blocks.push('<div class="block"><h2>Condition ' + (idx + 1) + ' <span class="eq">' + esc(c.src) + "</span></h2>" +
+      (rows || '<p class="' + cls + '">tout le plan</p>') + "</div>");
+  });
+
+  const s = state.sol;
+  let sol = "";
+  if (!s) sol = '<p class="note">Ecris une condition pour commencer.</p>';
+  else if (s.kind === "empty") sol = '<p class="err">Aucune solution : les courbes ne se croisent pas.</p>';
+  else if (s.kind === "plane") sol = '<p class="note">Tout le plan convient : la condition est toujours vraie.</p>';
+  else if (s.kind === "curve")
+    sol = '<div class="sol"><span class="tag">Ensemble solution</span>' + curve2html(s.curve) +
+      '<span class="approx">Une seule condition = une courbe entiere. Ajoute une condition 2 pour obtenir un point.</span></div>';
+  else {
+    sol = s.pts.map((z, k) => {
+      const mod = Math.hypot(z.re, z.im);
+      const arg = Math.atan2(z.im, z.re) * 180 / Math.PI;
+      return '<div class="sol"><span class="tag">' + (s.pts.length > 1 ? "Solution " + (k + 1) : "Solution") + "</span>z = " +
+        z2html(z) + '<span class="approx">&asymp; ' + round(z.re, 6) + (z.im < 0 ? " &minus; " : " + ") +
+        Math.abs(round(z.im, 6)) + "i &nbsp;&middot;&nbsp; |z| &asymp; " + round(mod, 4) +
+        " &nbsp;&middot;&nbsp; arg &asymp; " + round(arg, 2) + "&deg;</span></div>";
+    }).join("");
+  }
+  readout.innerHTML = '<div class="block"><h2>Resultat</h2>' + sol + "</div>" + blocks.join("");
+}
+
+/* ==================================================================
+   10. Boucle
+   ================================================================== */
+const in1 = document.getElementById("eq1"), in2 = document.getElementById("eq2");
+const f1 = document.getElementById("f1"), f2 = document.getElementById("f2");
+
+function run(autoFit) {
+  const conds = [];
+  [[in1, f1], [in2, f2]].forEach(([input, field]) => {
+    const src = input.value.trim();
+    field.classList.remove("bad");
+    if (!src) return;
+    try {
+      const F = parseEquation(src);
+      const r = toCurves(F);
+      conds.push({ src, curves: r.curves, none: r.none, all: r.all });
+    } catch (e) {
+      field.classList.add("bad");
+      conds.push({ src, error: e instanceof Err ? e.message : "expression illisible", curves: [] });
+    }
+  });
+  state.conds = conds;
+  const usable = conds.filter(c => !c.error);
+  state.sol = usable.length ? solveAll(usable) : null;
+  render();
+  if (autoFit || !solutionVisible()) fitView(); else draw();
+}
+
+let timer = null;
+const schedule = () => { clearTimeout(timer); timer = setTimeout(() => run(false), 140); };
+in1.addEventListener("input", schedule);
+in2.addEventListener("input", schedule);
+
+/* clavier de symboles */
+document.getElementById("keypad").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const target = document.activeElement === in2 ? in2 : in1;
+  const s = target.selectionStart ?? target.value.length;
+  const t = target.selectionEnd ?? s;
+  const ins = b.dataset.ins;
+  target.value = target.value.slice(0, s) + ins + target.value.slice(t);
+  target.focus();
+  target.setSelectionRange(s + ins.length, s + ins.length);
+  run(false);
+});
+
+/* exemples */
+const SAMPLES = [
+  { label: "3 + 2z = iz &minus; 4", a: "3 + 2z = iz - 4", b: "" },
+  { label: "|z &minus; 1| = 2  et  Re(z) = 1", a: "|z - 1| = 2", b: "Re(z) = 1" },
+  { label: "|z &minus; 1| = |z &minus; i|", a: "|z - 1| = |z - i|", b: "|z| = 2" },
+  { label: "(1 + i)z + conj(z) = 3 + i", a: "(1+i)z + conj(z) = 3 + i", b: "" },
+  { label: "z &times; conj(z) = 4", a: "z*conj(z) = 4", b: "Im(z) = 1" }
+];
+const samplesBox = document.getElementById("samples");
+SAMPLES.forEach(s => {
+  const b = document.createElement("button");
+  b.type = "button"; b.innerHTML = s.label;
+  b.addEventListener("click", () => { in1.value = s.a; in2.value = s.b; run(true); });
+  samplesBox.appendChild(b);
+});
+
+window.addEventListener("resize", resize);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+resize();
+run(true);
+</script>
+</body>
+</html>
