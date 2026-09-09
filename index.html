@@ -58,10 +58,17 @@ body{
 .thesis b{color:var(--phos);font-weight:500}
 
 /* ---------- disposition ---------- */
-.work{display:flex;flex-direction:column;gap:18px}
+.work{display:flex;flex-direction:column;gap:16px}
 @media(min-width:920px){
-  .work{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);align-items:start;gap:22px}
-  .console{position:sticky;top:18px}
+  .work{
+    display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);
+    grid-template-areas:"console scope" "samples scope" "readout scope";
+    align-items:start;gap:22px;
+  }
+  .scope{grid-area:scope;position:sticky;top:18px}
+  .console{grid-area:console}
+  .samples{grid-area:samples}
+  .readout{grid-area:readout}
 }
 
 /* ---------- console ---------- */
@@ -93,9 +100,21 @@ body{
 .keypad button:active{background:var(--phos);color:var(--void);border-color:var(--phos)}
 .keypad button:focus-visible{outline:2px solid var(--phos);outline-offset:1px}
 
-.samples{display:flex;flex-direction:column;gap:5px}
-.samples .cap{font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--phos-dim)}
-.samples .row{display:flex;flex-wrap:wrap;gap:6px}
+.samples{border:1px solid var(--edge);border-radius:3px;background:var(--panel)}
+.samples summary{
+  list-style:none;cursor:pointer;padding:10px 12px;display:flex;align-items:center;gap:8px;
+  font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--phos-dim);
+  -webkit-tap-highlight-color:transparent;
+}
+.samples summary::-webkit-details-marker{display:none}
+.samples summary:focus-visible{outline:2px solid var(--phos);outline-offset:-2px}
+.samples .chev{
+  margin-left:auto;width:0;height:0;
+  border-left:5px solid transparent;border-right:5px solid transparent;
+  border-top:6px solid var(--phos-dim);transition:transform .18s ease;
+}
+.samples[open] .chev{transform:rotate(180deg)}
+.samples .row{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 12px}
 .samples button{
   background:transparent;border:1px dashed var(--edge);color:var(--phos-dim);
   font-family:var(--mono);font-size:.78rem;padding:6px 9px;border-radius:3px;cursor:pointer;
@@ -152,6 +171,23 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
 }
 .sol .tag{display:block;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,180,84,.65);margin-bottom:4px}
 .sol .approx{display:block;font-size:.78rem;color:rgba(255,180,84,.7);margin-top:5px;letter-spacing:.02em}
+.sol.approx{border-style:dashed}
+.badge{
+  font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid rgba(255,180,84,.5);border-radius:2px;padding:1px 5px;color:var(--solve);
+}
+button.why{
+  width:18px;height:18px;line-height:1;padding:0;border-radius:50%;cursor:pointer;
+  border:1px solid rgba(255,180,84,.5);background:transparent;color:var(--solve);
+  font-family:var(--mono);font-size:.72rem;vertical-align:middle;
+}
+button.why:active{background:var(--solve);color:var(--void)}
+button.why:focus-visible{outline:2px solid var(--solve);outline-offset:1px}
+.why-panel sup{font-size:.75em}
+.why-panel{
+  margin-top:9px;padding:9px 11px;border-left:2px solid rgba(255,180,84,.4);
+  font-size:.78rem;line-height:1.6;color:rgba(255,180,84,.82);text-transform:none;letter-spacing:.01em;
+}
 .err{border-left:2px solid var(--alert);padding-left:11px;color:var(--alert);font-size:.88rem}
 .note{color:var(--phos-dim);font-size:.78rem;max-width:62ch}
 
@@ -170,10 +206,28 @@ footer a{color:var(--phos-dim)}
   <header class="masthead">
     <h1>PLAN DE WESSEL</h1>
     <p class="sub">resolution exacte &middot; trace en direct &middot; d'apres Caspar Wessel, 1797</p>
-    <p class="thesis">Une equation complexe, c'est <b>deux equations reelles</b> : la partie reelle et la partie imaginaire. Chacune trace une droite (ou un cercle). La solution est leur <b>intersection</b>.</p>
   </header>
 
   <div class="work">
+
+    <section class="scope">
+      <div class="scope-frame">
+        <canvas id="cv" width="600" height="600"></canvas>
+        <div class="scanlines"></div>
+        <div class="vignette"></div>
+      </div>
+      <div class="scope-bar">
+        <span id="viewinfo">&nbsp;</span>
+        <button type="button" id="fit">CADRER</button>
+      </div>
+    </section>
+
+    <section class="readout" id="readout"></section>
+
+    <details class="samples" id="samplesBox" open>
+      <summary>Exemples<span class="chev"></span></summary>
+      <div class="row" id="samples"></div>
+    </details>
 
     <section class="console">
       <div class="field" id="f1">
@@ -202,31 +256,17 @@ footer a{color:var(--phos-dim)}
         <button type="button" data-ins="Im(">Im(</button>
         <button type="button" data-ins="conj(">conj(</button>
       </div>
-
-      <div class="samples">
-        <span class="cap">Exemples</span>
-        <div class="row" id="samples"></div>
-      </div>
-    </section>
-
-    <section class="scope">
-      <div class="scope-frame">
-        <canvas id="cv" width="600" height="600"></canvas>
-        <div class="scanlines"></div>
-        <div class="vignette"></div>
-      </div>
-      <div class="scope-bar">
-        <span id="viewinfo">&nbsp;</span>
-        <button type="button" id="fit">CADRER</button>
-      </div>
     </section>
   </div>
 
-  <section class="readout" id="readout"></section>
-
   <footer>
+    Une equation complexe, c'est <b>deux equations reelles</b> : la partie reelle et la
+    partie imaginaire. Chacune trace une droite ou un cercle, et la solution est leur
+    <b>intersection</b>.
+    <br><br>
     Glisser pour deplacer, pincer ou molette pour zoomer.
-    Ecrit <code>z</code> pour l'inconnue, <code>conj(z)</code> pour le conjugue, <code>|...|</code> pour le module.
+    Ecrit <code>z</code> pour l'inconnue, <code>conj(z)</code> pour le conjugue,
+    <code>|...|</code> pour le module.
   </footer>
 </div>
 
@@ -242,80 +282,170 @@ const csub  = (u, v) => C(u.re - v.re, u.im - v.im);
 const cmul  = (u, v) => C(u.re * v.re - u.im * v.im, u.re * v.im + u.im * v.re);
 const cconj = (u) => C(u.re, -u.im);
 const cabs  = (u) => Math.hypot(u.re, u.im);
-const cneg  = (u) => C(-u.re, -u.im);
 const cdiv  = (u, v) => {
   const d = v.re * v.re + v.im * v.im;
   if (d === 0) throw new Err("division par zero");
   return C((u.re * v.re + u.im * v.im) / d, (u.im * v.re - u.re * v.im) / d);
+};
+const csqrt = (u) => {
+  const r = cabs(u);
+  if (r === 0) return C(0, 0);
+  const t = Math.atan2(u.im, u.re) / 2, s = Math.sqrt(r);
+  return C(s * Math.cos(t), s * Math.sin(t));
 };
 const czero = (u, e = 1e-11) => Math.hypot(u.re, u.im) < e;
 const ZERO = C(0, 0), ONE = C(1, 0), I = C(0, 1);
 
 function Err(msg) { this.message = msg; }
 Err.prototype.toString = function () { return this.message; };
+function NotPoly() {}                     // signale : « cette expression n'est pas polynomiale »
 
 /* ==================================================================
-   2. Forme normale d'une expression
-      F(z) = q|z|^2 + a.z + b.conj(z) + c + somme( k_j * |A_j| )
-      q, a, b, c, k : complexes.  A_j : forme affine (a,b,c).
+   2. Polynomes en z  —  le chemin exact pour z^n
+      P = [c0, c1, ... cn]  (coefficients complexes)
    ================================================================== */
-const F0 = () => ({ q: ZERO, a: ZERO, b: ZERO, c: ZERO, mods: [] });
-const fconst = (v) => ({ q: ZERO, a: ZERO, b: ZERO, c: v, mods: [] });
-const fz     = () => ({ q: ZERO, a: ONE, b: ZERO, c: ZERO, mods: [] });
+const DEGMAX = 12;
+const ptrim = (P) => { let n = P.length - 1; while (n > 0 && czero(P[n], 1e-13)) n--; return P.slice(0, n + 1); };
+const pdeg  = (P) => ptrim(P).length - 1;
+const padd  = (A, B) => { const n = Math.max(A.length, B.length), R = []; for (let i = 0; i < n; i++) R.push(cadd(A[i] || ZERO, B[i] || ZERO)); return ptrim(R); };
+const psub  = (A, B) => { const n = Math.max(A.length, B.length), R = []; for (let i = 0; i < n; i++) R.push(csub(A[i] || ZERO, B[i] || ZERO)); return ptrim(R); };
+const pscale = (A, k) => ptrim(A.map(c => cmul(c, k)));
+function pmul(A, B) {
+  if ((A.length - 1) + (B.length - 1) > DEGMAX) throw new Err("degre superieur a " + DEGMAX + " : hors du solveur");
+  const R = new Array(A.length + B.length - 1).fill(ZERO);
+  for (let i = 0; i < A.length; i++) for (let j = 0; j < B.length; j++) R[i + j] = cadd(R[i + j], cmul(A[i], B[j]));
+  return ptrim(R);
+}
+function ppow(A, n) {
+  let r = [ONE];
+  for (let k = 0; k < n; k++) r = pmul(r, A);
+  return r;
+}
+function peval(P, z) { let r = ZERO; for (let i = P.length - 1; i >= 0; i--) r = cadd(cmul(r, z), P[i]); return r; }
+function pderiv(P) { const R = []; for (let i = 1; i < P.length; i++) R.push(cmul(P[i], C(i))); return R.length ? R : [ZERO]; }
 
-const isConst  = (F) => czero(F.q) && czero(F.a) && czero(F.b) && F.mods.length === 0;
-const isAffine = (F) => czero(F.q) && F.mods.length === 0;
-const isPureMod = (F) => czero(F.q) && czero(F.a) && czero(F.b) && czero(F.c) && F.mods.length === 1;
+/* Durand-Kerner : toutes les racines d'un polynome, par iterations. */
+function dkRoots(P) {
+  const Q = ptrim(P), n = Q.length - 1;
+  if (n < 1) return [];
+  const mono = Q.map(c => cdiv(c, Q[n]));
+  const z = [];
+  for (let k = 0; k < n; k++) {
+    const t = 0.5 + 2.1 * k, rad = 1 + 0.4 * k;
+    z.push(C(rad * Math.cos(t), rad * Math.sin(t)));
+  }
+  for (let it = 0; it < 600; it++) {
+    let move = 0;
+    for (let k = 0; k < n; k++) {
+      let den = ONE;
+      for (let j = 0; j < n; j++) if (j !== k) den = cmul(den, csub(z[k], z[j]));
+      if (cabs(den) < 1e-290) continue;
+      const d = cdiv(peval(mono, z[k]), den);
+      z[k] = csub(z[k], d);
+      move = Math.max(move, cabs(d));
+    }
+    if (move < 1e-15) break;
+  }
+  const dQ = pderiv(Q);                       // polissage par Newton sur le polynome d'origine
+  return z.map(r => {
+    let w = r;
+    for (let it = 0; it < 40; it++) {
+      const d = peval(dQ, w);
+      if (cabs(d) < 1e-290) break;
+      const step = cdiv(peval(Q, w), d);
+      w = csub(w, step);
+      if (cabs(step) < 1e-16 * (1 + cabs(w))) break;
+    }
+    return w;
+  });
+}
+
+/* Racines de P = 0. Renvoie { pts, approx, methode }. */
+function polyRoots(P) {
+  const Q = ptrim(P), n = Q.length - 1;
+  if (n < 1) return czero(Q[0]) ? { all: true } : { pts: [] };
+  if (n === 1) return { pts: [cdiv(C(-Q[0].re, -Q[0].im), Q[1])], approx: false, methode: "equation du premier degre" };
+
+  const milieuNul = Q.slice(1, n).every(c => czero(c, 1e-12));
+  if (milieuNul) {                             // z^n = w : forme polaire, exact
+    const w = cdiv(C(-Q[0].re, -Q[0].im), Q[n]);
+    if (czero(w)) return { pts: [ZERO], approx: false, methode: "racine n-ieme de zero" };
+    const R = Math.pow(cabs(w), 1 / n), th = Math.atan2(w.im, w.re) / n, pts = [];
+    for (let k = 0; k < n; k++) {
+      const t = th + 2 * Math.PI * k / n;
+      pts.push(C(R * Math.cos(t), R * Math.sin(t)));
+    }
+    return { pts, approx: false, methode: "racines n-iemes en forme polaire" };
+  }
+  if (n === 2) {                               // formule du second degre, exacte
+    const [c0, c1, c2] = Q;
+    const disc = csub(cmul(c1, c1), cmul(C(4), cmul(c2, c0)));
+    const s = csqrt(disc), deux = cmul(C(2), c2);
+    return {
+      pts: [cdiv(csub(s, c1), deux), cdiv(csub(C(-s.re, -s.im), c1), deux)]
+             .filter((z, i, a) => i === 0 || cabs(csub(z, a[0])) > 1e-12),
+      approx: false, methode: "formule du second degre"
+    };
+  }
+  return { pts: dkRoots(Q), approx: true, methode: "iterations de Durand-Kerner, affinees par Newton" };
+}
+
+/* ==================================================================
+   3. Forme normale — le chemin des conjugues et des modules
+      F(z) = p z² + r conj(z)² + q|z|² + a z + b conj(z) + c + Σ k_j |A_j|
+   ================================================================== */
+const fconst = (v) => ({ p: ZERO, r: ZERO, q: ZERO, a: ZERO, b: ZERO, c: v, mods: [] });
+const fz     = () => ({ p: ZERO, r: ZERO, q: ZERO, a: ONE, b: ZERO, c: ZERO, mods: [] });
+
+const isConst   = (F) => czero(F.p) && czero(F.r) && czero(F.q) && czero(F.a) && czero(F.b) && F.mods.length === 0;
+const isAffine  = (F) => czero(F.p) && czero(F.r) && czero(F.q) && F.mods.length === 0;
+const isPureMod = (F) => czero(F.p) && czero(F.r) && czero(F.q) && czero(F.a) && czero(F.b) && czero(F.c) && F.mods.length === 1;
 
 const fscale = (F, k) => ({
-  q: cmul(k, F.q), a: cmul(k, F.a), b: cmul(k, F.b), c: cmul(k, F.c),
+  p: cmul(k, F.p), r: cmul(k, F.r), q: cmul(k, F.q),
+  a: cmul(k, F.a), b: cmul(k, F.b), c: cmul(k, F.c),
   mods: F.mods.map(m => ({ k: cmul(k, m.k), f: m.f }))
 });
 const fadd = (F, G) => ({
-  q: cadd(F.q, G.q), a: cadd(F.a, G.a), b: cadd(F.b, G.b), c: cadd(F.c, G.c),
+  p: cadd(F.p, G.p), r: cadd(F.r, G.r), q: cadd(F.q, G.q),
+  a: cadd(F.a, G.a), b: cadd(F.b, G.b), c: cadd(F.c, G.c),
   mods: F.mods.concat(G.mods)
 });
-const fsub = (F, G) => fadd(F, fscale(G, C(-1)));
-
+const fsub  = (F, G) => fadd(F, fscale(G, C(-1)));
 const fconj = (F) => ({
-  q: cconj(F.q), a: cconj(F.b), b: cconj(F.a), c: cconj(F.c),
+  p: cconj(F.r), r: cconj(F.p), q: cconj(F.q),
+  a: cconj(F.b), b: cconj(F.a), c: cconj(F.c),
   mods: F.mods.map(m => ({ k: cconj(m.k), f: m.f }))
 });
 const fre = (F) => fscale(fadd(F, fconj(F)), C(0.5));
 const fim = (F) => fscale(fsub(F, fconj(F)), C(0, -0.5));
 
 function fabsv(F) {
-  if (!isAffine(F)) throw new Err("module d'une expression non lineaire : non supporte");
-  return { q: ZERO, a: ZERO, b: ZERO, c: ZERO, mods: [{ k: ONE, f: { a: F.a, b: F.b, c: F.c } }] };
+  if (!isAffine(F)) throw new Err("module d'une expression de degre 2 : hors du solveur");
+  return { p: ZERO, r: ZERO, q: ZERO, a: ZERO, b: ZERO, c: ZERO, mods: [{ k: ONE, f: { a: F.a, b: F.b, c: F.c } }] };
 }
+const sameAff = (x, y) => czero(csub(x.a, y.a)) && czero(csub(x.b, y.b)) && czero(csub(x.c, y.c));
 
 function fmul(F, G) {
   if (isConst(F)) return fscale(G, F.c);
   if (isConst(G)) return fscale(F, G.c);
-  // |A| * |A|  ->  A * conj(A)
   if (isPureMod(F) && isPureMod(G) && sameAff(F.mods[0].f, G.mods[0].f)) {
-    const A = { q: ZERO, ...F.mods[0].f, mods: [] };
-    const k = cmul(F.mods[0].k, G.mods[0].k);
-    return fscale(fmul(A, fconj(A)), k);
+    const A = { p: ZERO, r: ZERO, q: ZERO, ...F.mods[0].f, mods: [] };
+    return fscale(fmul(A, fconj(A)), cmul(F.mods[0].k, G.mods[0].k));
   }
   if (isAffine(F) && isAffine(G)) {
-    if (!czero(cmul(F.a, G.a))) throw new Err("terme en z^2 : l'equation n'est pas lineaire");
-    if (!czero(cmul(F.b, G.b))) throw new Err("terme en conj(z)^2 : non supporte");
     return {
+      p: cmul(F.a, G.a), r: cmul(F.b, G.b),
       q: cadd(cmul(F.a, G.b), cmul(F.b, G.a)),
       a: cadd(cmul(F.a, G.c), cmul(F.c, G.a)),
       b: cadd(cmul(F.b, G.c), cmul(F.c, G.b)),
-      c: cmul(F.c, G.c),
-      mods: []
+      c: cmul(F.c, G.c), mods: []
     };
   }
-  throw new Err("produit trop complique pour ce solveur");
-}
-function sameAff(x, y) {
-  return czero(csub(x.a, y.a)) && czero(csub(x.b, y.b)) && czero(csub(x.c, y.c));
+  throw new Err("produit de degre 3 ou plus : hors du solveur");
 }
 function fdiv(F, G) {
-  if (!isConst(G)) throw new Err("division par une expression contenant z : non supportee");
+  if (!isConst(G)) throw new Err("division par une expression contenant z : hors du solveur");
   return fscale(F, cdiv(ONE, G.c));
 }
 function fpow(F, n) {
@@ -324,19 +454,31 @@ function fpow(F, n) {
   for (let k = 0; k < n; k++) r = fmul(r, F);
   return r;
 }
+/* Valeur de la forme en un point — sert a verifier les solutions. */
+function evalForm(F, z) {
+  const zb = cconj(z), m2 = C(z.re * z.re + z.im * z.im);
+  let v = cadd(cadd(cmul(F.p, cmul(z, z)), cmul(F.r, cmul(zb, zb))), cmul(F.q, m2));
+  v = cadd(cadd(v, cmul(F.a, z)), cadd(cmul(F.b, zb), F.c));
+  let scale = (cabs(F.p) + cabs(F.r) + cabs(F.q)) * m2.re + (cabs(F.a) + cabs(F.b)) * cabs(z) + cabs(F.c);
+  for (const m of F.mods) {
+    const A = cabs(cadd(cadd(cmul(m.f.a, z), cmul(m.f.b, zb)), m.f.c));
+    v = cadd(v, cmul(m.k, C(A)));
+    scale += cabs(m.k) * A;
+  }
+  return { v, scale: scale + 1 };
+}
 
 /* ==================================================================
-   3. Lecture du texte  ->  forme normale
+   4. Lecture du texte
    ================================================================== */
 function normalize(src) {
   return src
     .replace(/−/g, "-").replace(/[×·•]/g, "*").replace(/÷/g, "/")
-    .replace(/[‘’]/g, "").replace(/²/g, "^2").replace(/³/g, "^3")
+    .replace(/[‘’]/g, "").replace(/²/g, "^2").replace(/³/g, "^3").replace(/⁴/g, "^4")
     .replace(/z̄|ƶ|z̅/g, "conj(z)")
     .replace(/,(\d)/g, ".$1")
     .replace(/\s+/g, "");
 }
-
 function tokenize(src) {
   const s = normalize(src), out = [];
   let p = 0;
@@ -350,10 +492,8 @@ function tokenize(src) {
     }
     if (/[A-Za-z]/.test(ch)) {
       let j = p; while (j < s.length && /[A-Za-z]/.test(s[j])) j++;
-      let w = s.slice(p, j);
-      // decoupe les suites de variables collees : "iz" -> "i","z"
-      const known = ["conj", "Re", "Im", "re", "im", "abs", "mod"];
-      if (known.includes(w)) { out.push({ t: "fn", v: w.toLowerCase() }); p = j; continue; }
+      const w = s.slice(p, j);
+      if (["conj", "Re", "Im", "re", "im", "abs", "mod"].includes(w)) { out.push({ t: "fn", v: w.toLowerCase() }); p = j; continue; }
       for (const c of w) {
         const lc = c.toLowerCase();
         if (lc === "i") out.push({ t: "i" });
@@ -368,233 +508,438 @@ function tokenize(src) {
   return out;
 }
 
-function parseExpr(tokens) {
-  let p = 0, bars = 0;
-  const peek = () => tokens[p];
-  const eat = (t) => { if (!tokens[p] || tokens[p].t !== t) throw new Err("il manque " + t); return tokens[p++]; };
-
-  function startsPrimary(tk) {
-    if (!tk) return false;
-    if (tk.t === "|") return bars === 0;         // dans une barre, | ferme
-    return ["num", "i", "z", "fn", "("].includes(tk.t);
-  }
-  function expr() {
-    let v = term();
-    while (peek() && (peek().t === "+" || peek().t === "-")) {
-      const op = tokens[p++].t, r = term();
-      v = op === "+" ? fadd(v, r) : fsub(v, r);
+/* Analyseur commun aux deux algebres. `alg` fournit les operations. */
+function makeParser(alg) {
+  return function (tokens) {
+    let p = 0, bars = 0;
+    const peek = () => tokens[p];
+    const eat = (t) => { if (!tokens[p] || tokens[p].t !== t) throw new Err("il manque " + t); return tokens[p++]; };
+    const startsPrimary = (tk) => {
+      if (!tk) return false;
+      if (tk.t === "|") return bars === 0;
+      return ["num", "i", "z", "fn", "("].includes(tk.t);
+    };
+    function expr() {
+      let v = term();
+      while (peek() && (peek().t === "+" || peek().t === "-")) {
+        const op = tokens[p++].t, r = term();
+        v = op === "+" ? alg.add(v, r) : alg.sub(v, r);
+      }
+      return v;
     }
-    return v;
-  }
-  function term() {
-    let v = unary();
-    for (;;) {
-      const tk = peek();
-      if (tk && (tk.t === "*" || tk.t === "/")) { p++; const r = unary(); v = tk.t === "*" ? fmul(v, r) : fdiv(v, r); }
-      else if (startsPrimary(tk)) { const r = unary(); v = fmul(v, r); }   // produit implicite : 2z, iz
-      else return v;
-    }
-  }
-  function unary() {
-    const tk = peek();
-    if (tk && tk.t === "-") { p++; return fscale(unary(), C(-1)); }
-    if (tk && tk.t === "+") { p++; return unary(); }
-    return power();
-  }
-  function power() {
-    const base = primary();
-    if (peek() && peek().t === "^") {
-      p++;
-      let sign = 1;
-      if (peek() && peek().t === "-") { p++; sign = -1; }
-      const e = eat("num").v * sign;
-      if (sign < 0) throw new Err("exposant negatif : non supporte");
-      return fpow(base, e);
-    }
-    return base;
-  }
-  function primary() {
-    const tk = peek();
-    if (!tk) throw new Err("expression incomplete");
-    if (tk.t === "num") { p++; return fconst(C(tk.v)); }
-    if (tk.t === "i")   { p++; return fconst(I); }
-    if (tk.t === "z")   { p++; return fz(); }
-    if (tk.t === "(")   { p++; const v = expr(); eat(")"); return v; }
-    if (tk.t === "|")   { p++; bars++; const v = expr(); bars--; eat("|"); return fabsv(v); }
-    if (tk.t === "fn") {
-      p++; eat("(");
-      const v = expr(); eat(")");
-      switch (tk.v) {
-        case "conj": return fconj(v);
-        case "re":   return fre(v);
-        case "im":   return fim(v);
-        case "abs": case "mod": return fabsv(v);
+    function term() {
+      let v = unary();
+      for (;;) {
+        const tk = peek();
+        if (tk && (tk.t === "*" || tk.t === "/")) { p++; const r = unary(); v = tk.t === "*" ? alg.mul(v, r) : alg.div(v, r); }
+        else if (startsPrimary(tk)) v = alg.mul(v, unary());
+        else return v;
       }
     }
-    throw new Err("expression mal formee");
-  }
-
-  const v = expr();
-  if (p !== tokens.length) throw new Err("expression mal formee");
-  return v;
+    function unary() {
+      const tk = peek();
+      if (tk && tk.t === "-") { p++; return alg.neg(unary()); }
+      if (tk && tk.t === "+") { p++; return unary(); }
+      return power();
+    }
+    function power() {
+      const base = primary();
+      if (peek() && peek().t === "^") {
+        p++;
+        if (peek() && peek().t === "-") throw new Err("exposant negatif : hors du solveur");
+        const e = eat("num").v;
+        if (!Number.isInteger(e) || e < 0 || e > DEGMAX) throw new Err("exposant invalide (entier de 0 a " + DEGMAX + ")");
+        return alg.pow(base, e);
+      }
+      return base;
+    }
+    function primary() {
+      const tk = peek();
+      if (!tk) throw new Err("expression incomplete");
+      if (tk.t === "num") { p++; return alg.num(tk.v); }
+      if (tk.t === "i")   { p++; return alg.imag(); }
+      if (tk.t === "z")   { p++; return alg.z(); }
+      if (tk.t === "(")   { p++; const v = expr(); eat(")"); return v; }
+      if (tk.t === "|")   { p++; bars++; const v = expr(); bars--; eat("|"); return alg.abs(v); }
+      if (tk.t === "fn")  { p++; eat("("); const v = expr(); eat(")"); return alg.fn(tk.v, v); }
+      throw new Err("expression mal formee");
+    }
+    const v = expr();
+    if (p !== tokens.length) throw new Err("expression mal formee");
+    return v;
+  };
 }
 
-/* Une equation "gauche = droite" -> forme normale de (gauche - droite). */
-function parseEquation(src) {
+const ALG_FORM = {
+  num: (v) => fconst(C(v)), imag: () => fconst(I), z: fz,
+  add: fadd, sub: fsub, mul: fmul, div: fdiv, neg: (F) => fscale(F, C(-1)), pow: fpow,
+  abs: fabsv,
+  fn: (name, v) => name === "conj" ? fconj(v) : name === "re" ? fre(v) : name === "im" ? fim(v) : fabsv(v)
+};
+const ALG_POLY = {
+  num: (v) => [C(v)], imag: () => [I], z: () => [ZERO, ONE],
+  add: padd, sub: psub, mul: pmul,
+  div: (A, B) => { if (pdeg(B) > 0) throw new Err("division par une expression contenant z : hors du solveur"); return pscale(A, cdiv(ONE, B[0])); },
+  neg: (A) => pscale(A, C(-1)), pow: ppow,
+  abs: () => { throw new NotPoly(); },
+  fn: () => { throw new NotPoly(); }
+};
+const parseForm = makeParser(ALG_FORM);
+const parsePoly = makeParser(ALG_POLY);
+
+function splitEquation(src) {
   const tokens = tokenize(src);
   const cut = tokens.findIndex(t => t.t === "=");
-  if (cut < 0) throw new Err("il manque le signe = ");
+  if (cut < 0) throw new Err("il manque le signe =");
   if (tokens.slice(cut + 1).some(t => t.t === "=")) throw new Err("un seul signe = par condition");
-  const L = parseExpr(tokens.slice(0, cut));
-  const R = parseExpr(tokens.slice(cut + 1));
-  return fsub(L, R);
+  return [tokens.slice(0, cut), tokens.slice(cut + 1)];
 }
 
 /* ==================================================================
-   4. Forme normale  ->  courbes  A|z|^2 + 2Re(W z) + K = 0
-      A = 0 : droite      A != 0 : cercle
+   5. Coniques :  A x² + B xy + C y² + D x + E y + F = 0
    ================================================================== */
-const GC = (A, W, K) => ({ A, W, K });
+const K = (A, B, Cc, D, E, F) => ({ A, B, C: Cc, D, E, F });
+const kEval = (k, x, y) => k.A * x * x + k.B * x * y + k.C * y * y + k.D * x + k.E * y + k.F;
+const kScale = (k, x, y) => Math.abs(k.A * x * x) + Math.abs(k.B * x * y) + Math.abs(k.C * y * y)
+                          + Math.abs(k.D * x) + Math.abs(k.E * y) + Math.abs(k.F) + 1;
+const kIsNull  = (k) => [k.A, k.B, k.C, k.D, k.E, k.F].every(v => Math.abs(v) < 1e-12);
+const kIsLine  = (k) => Math.abs(k.A) < 1e-12 && Math.abs(k.B) < 1e-12 && Math.abs(k.C) < 1e-12;
+const kIsCircle = (k) => !kIsLine(k) && Math.abs(k.B) < 1e-12 && Math.abs(k.A - k.C) < 1e-12 * Math.max(1, Math.abs(k.A));
 
-function toCurves(F) {
-  if (F.mods.length === 0) {
-    // equation complexe = partie reelle + partie imaginaire
-    const cRe = GC(F.q.re, fmulHalf(cadd(F.a, cconj(F.b))), F.c.re);
-    const cIm = GC(F.q.im, fmulHalf(cmul(C(0, -1), csub(F.a, cconj(F.b)))), F.c.im);
-    const out = [];
-    if (!isTrivialZero(cRe)) out.push({ ...cRe, part: "Partie reelle" });
-    if (!isTrivialZero(cIm)) out.push({ ...cIm, part: "Partie imaginaire" });
-    if (out.length === 0) return { curves: [], all: true };
-    return { curves: out, all: false };
-  }
-  // conditions avec module
-  const rest = { q: F.q, a: F.a, b: F.b, c: F.c };
-  if (F.mods.length === 1) {
-    const m = F.mods[0];
-    if (!czero(rest.q) || !czero(rest.a) || !czero(rest.b)) throw new Err("forme non supportee : melange module / partie lineaire");
-    if (Math.abs(m.k.im) > 1e-11 || Math.abs(rest.c.im) > 1e-11) throw new Err("condition non reelle : non supportee");
-    const r = -rest.c.re / m.k.re;                      // |A| = r
-    if (!isFinite(r)) throw new Err("condition impossible a interpreter");
-    if (r < -1e-12) return { curves: [], none: true };
-    const A = affNoConj(m.f);
-    const n = cabs(A.a) ** 2;
-    return { curves: [{ ...GC(n, cmul(A.a, cconj(A.c)), cabs(A.c) ** 2 - r * r), part: "Module" }], all: false };
-  }
-  if (F.mods.length === 2) {
-    const [m1, m2] = F.mods;
-    if (!czero(rest.q) || !czero(rest.a) || !czero(rest.b) || !czero(rest.c))
-      throw new Err("forme non supportee (ellipse ou hyperbole)");
-    if (Math.abs(m1.k.im) > 1e-11 || Math.abs(m2.k.im) > 1e-11) throw new Err("condition non reelle : non supportee");
-    if (Math.abs(m1.k.re + m2.k.re) > 1e-11 || Math.abs(m1.k.re) < 1e-11)
-      throw new Err("forme non supportee (ellipse ou hyperbole)");
-    const A = affNoConj(m1.f), B = affNoConj(m2.f);
-    return {
-      curves: [{
-        ...GC(cabs(A.a) ** 2 - cabs(B.a) ** 2,
-              csub(cmul(A.a, cconj(A.c)), cmul(B.a, cconj(B.c))),
-              cabs(A.c) ** 2 - cabs(B.c) ** 2),
-        part: "Equidistance"
-      }], all: false
-    };
-  }
-  throw new Err("trop de modules dans cette condition");
+function kCircle(k) {                          // centre et rayon² d'un cercle
+  const cx = -k.D / (2 * k.A), cy = -k.E / (2 * k.A);
+  return { cx, cy, r2: cx * cx + cy * cy - k.F / k.A };
 }
-const fmulHalf = (w) => C(w.re / 2, w.im / 2);
-const isTrivialZero = (g) => Math.abs(g.A) < 1e-12 && czero(g.W) && Math.abs(g.K) < 1e-12;
+function kKind(k) {                            // nom de la courbe
+  if (kIsNull(k)) return "plan";
+  if (kIsLine(k)) return (Math.abs(k.D) < 1e-12 && Math.abs(k.E) < 1e-12) ? "vide" : "droite";
+  if (kIsCircle(k)) { const c = kCircle(k); return c.r2 < -1e-12 ? "vide" : c.r2 < 1e-12 ? "point" : "cercle"; }
+  const d = k.B * k.B - 4 * k.A * k.C;
+  return d < -1e-11 ? "ellipse" : d > 1e-11 ? "hyperbole" : "parabole";
+}
+/* rotation des axes d'un angle t (sert quand aucune conique n'a de terme en y²) */
+function kRotate(k, t) {
+  const c = Math.cos(t), s = Math.sin(t);      // x = cX - sY,  y = sX + cY
+  return K(
+    k.A * c * c + k.B * c * s + k.C * s * s,
+    2 * (k.C - k.A) * c * s + k.B * (c * c - s * s),
+    k.A * s * s - k.B * c * s + k.C * c * c,
+    k.D * c + k.E * s,
+    -k.D * s + k.E * c,
+    k.F
+  );
+}
 
-/* |a z + b conj(z) + c| : ramene au cas b = 0 quand c'est possible */
+/* ---- forme normale -> coniques ---- */
 function affNoConj(f) {
   if (czero(f.b)) return { a: f.a, c: f.c };
-  if (czero(f.a)) return { a: cconj(f.b), c: cconj(f.c) };   // |b zbar + c| = |conj(b) z + conj(c)|
-  throw new Err("module contenant a la fois z et conj(z) : non supporte");
+  if (czero(f.a)) return { a: cconj(f.b), c: cconj(f.c) };
+  throw new Err("module contenant a la fois z et conj(z) : hors du solveur");
+}
+/* |alpha z + gamma| = s * |z - a0| */
+function modCenter(f) {
+  const A = affNoConj(f);
+  if (czero(A.a)) return { s: 0, a0: ZERO, cst: cabs(A.c) };
+  const s = cabs(A.a);
+  return { s, a0: cdiv(C(-A.c.re, -A.c.im), A.a), cst: 0 };
+}
+function conicsFromForm(F) {
+  const { p, r, q, a, b, c, mods } = F;
+  if (mods.length === 0) {
+    const re = K(p.re + r.re + q.re, -2 * p.im + 2 * r.im, -p.re - r.re + q.re, a.re + b.re, -a.im + b.im, c.re);
+    const im = K(p.im + r.im + q.im,  2 * p.re - 2 * r.re, -p.im - r.im + q.im, a.im + b.im,  a.re - b.re, c.im);
+    const out = [];
+    if (!kIsNull(re)) out.push({ ...re, part: "Partie reelle" });
+    if (!kIsNull(im)) out.push({ ...im, part: "Partie imaginaire" });
+    return out;
+  }
+  const rest = { p, r, q, a, b, c };
+  const restQuadratic = !czero(rest.p) || !czero(rest.r) || !czero(rest.q);
+  if (restQuadratic) throw new Err("module melange a un terme de degre 2 : hors du solveur");
+
+  if (mods.length === 1) {
+    const m = mods[0];
+    if (Math.abs(m.k.im) > 1e-11) throw new Err("module a coefficient complexe : hors du solveur");
+    // partie sans module, qui doit etre reelle :  R = 2Re(a z) + c
+    if (!czero(csub(rest.b, cconj(rest.a))) || Math.abs(rest.c.im) > 1e-11)
+      throw new Err("condition non reelle : hors du solveur");
+    const M = modCenter(m.f);
+    if (M.s === 0) throw new Err("module sans z : rien a resoudre");
+    const w = m.k.re * M.s;                    // w |z - a0| + R = 0  ->  w²|z-a0|² = R²
+    const Rl = { x: 2 * rest.a.re, y: -2 * rest.a.im, k: rest.c.re };   // R = Rl.x*x + Rl.y*y + Rl.k
+    const w2 = w * w, ax = M.a0.re, ay = M.a0.im;
+    return [{
+      ...K(w2 - Rl.x * Rl.x,
+           -2 * Rl.x * Rl.y,
+           w2 - Rl.y * Rl.y,
+           -2 * w2 * ax - 2 * Rl.x * Rl.k,
+           -2 * w2 * ay - 2 * Rl.y * Rl.k,
+           w2 * (ax * ax + ay * ay) - Rl.k * Rl.k),
+      part: "Module",
+      hint: { cx: ax, cy: ay, R: Math.abs(Rl.k) / w + Math.abs(Rl.x) + Math.abs(Rl.y) + 2 }
+    }];
+  }
+  if (mods.length === 2) {
+    const [m1, m2] = mods;
+    if (Math.abs(m1.k.im) > 1e-11 || Math.abs(m2.k.im) > 1e-11) throw new Err("module a coefficient complexe : hors du solveur");
+    if (!czero(rest.a) || !czero(rest.b) || Math.abs(rest.c.im) > 1e-11)
+      throw new Err("deux modules et un terme en z : hors du solveur");
+    const A = modCenter(m1.f), B = modCenter(m2.f);
+    if (A.s === 0 || B.s === 0) throw new Err("module sans z : hors du solveur");
+    const w1 = m1.k.re * A.s, w2 = m2.k.re * B.s;
+    if (Math.abs(Math.abs(w1) - Math.abs(w2)) > 1e-11)
+      throw new Err("deux modules de poids differents (ovale de Cassini) : hors du solveur");
+    const w = Math.abs(w1);
+    let a1 = A.a0, a2 = B.a0, k = -rest.c.re / w;
+    if (Math.sign(w1) !== Math.sign(w2)) {     // |z-a1| - |z-a2| = k
+      if (Math.sign(w1) < 0) { const t = a1; a1 = a2; a2 = t; }
+    } else {                                   // |z-a1| + |z-a2| = k
+      if (Math.sign(w1) < 0) k = -k;
+      if (k <= 1e-12) return [{ ...K(0, 0, 0, 0, 0, 1), part: "Somme de modules" }];  // aucun point
+    }
+    if (k < 0) { const t = a1; a1 = a2; a2 = t; k = -k; }
+    const d = csub(a1, a2);
+    const m1x = -2 * d.re, m1y = -2 * d.im;
+    const m0 = (a1.re * a1.re + a1.im * a1.im) - (a2.re * a2.re + a2.im * a2.im);
+    const L0 = m0 + k * k, k4 = 4 * k * k;
+    return [{
+      ...K(m1x * m1x - k4,
+           2 * m1x * m1y,
+           m1y * m1y - k4,
+           2 * m1x * L0 + 2 * k4 * a1.re,
+           2 * m1y * L0 + 2 * k4 * a1.im,
+           L0 * L0 - k4 * (a1.re * a1.re + a1.im * a1.im)),
+      part: k === 0 ? "Equidistance" : "Somme ou difference de modules",
+      hint: { cx: (a1.re + a2.re) / 2, cy: (a1.im + a2.im) / 2, R: k + cabs(csub(a1, a2)) + 2 }
+    }];
+  }
+  throw new Err("plus de deux modules : hors du solveur");
 }
 
 /* ==================================================================
-   5. Geometrie exacte
+   6. Intersections
    ================================================================== */
-function normCurve(g) {
-  if (Math.abs(g.A) > 1e-12) {
-    const s = 1 / g.A;
-    return GC(1, C(g.W.re * s, g.W.im * s), g.K * s);
-  }
-  const n = Math.hypot(2 * g.W.re, 2 * g.W.im);
-  if (n < 1e-14) return GC(0, ZERO, g.K);
-  return GC(0, C(g.W.re / n, g.W.im / n), g.K / n);
-}
-const lineNormal = (g) => ({ nx: 2 * g.W.re, ny: -2 * g.W.im, c: g.K });   // nx*x + ny*y + c = 0
-function circleData(g) {
-  const n = normCurve(g);
-  const center = C(-n.W.re, n.W.im);                 // -conj(W)
-  const r2 = n.W.re * n.W.re + n.W.im * n.W.im - n.K;
-  return { center, r2, r: r2 > 0 ? Math.sqrt(r2) : 0 };
-}
-const isLine = (g) => Math.abs(g.A) < 1e-12;
-
-function residual(g, z) {
-  const m2 = z.re * z.re + z.im * z.im;
-  const re = g.W.re * z.re - g.W.im * z.im;          // Re(W z)
-  const val = g.A * m2 + 2 * re + g.K;
-  const scale = Math.abs(g.A) * m2 + 2 * cabs(g.W) * Math.sqrt(m2) + Math.abs(g.K) + 1;
-  return Math.abs(val) / scale;
+function lineData(k) {
+  const n = Math.hypot(k.D, k.E);
+  if (n < 1e-13) return null;
+  return { nx: k.D / n, ny: k.E / n, c: k.F / n };
 }
 
-function interLineLine(g1, g2) {
-  const a = lineNormal(normCurve(g1)), b = lineNormal(normCurve(g2));
+function interLineLine(k1, k2) {
+  const a = lineData(k1), b = lineData(k2);
+  if (!a || !b) return { kind: "none" };
   const det = a.nx * b.ny - a.ny * b.nx;
   if (Math.abs(det) < 1e-11) {
-    const coincident = Math.abs(a.nx * b.c - b.nx * a.c) < 1e-9 && Math.abs(a.ny * b.c - b.ny * a.c) < 1e-9;
-    return coincident ? { kind: "same" } : { kind: "none" };
+    const same = Math.abs(a.nx * b.c - b.nx * a.c) < 1e-9 && Math.abs(a.ny * b.c - b.ny * a.c) < 1e-9;
+    return same ? { kind: "same" } : { kind: "none" };
   }
-  const x = (-a.c * b.ny + b.c * a.ny) / det;
-  const y = (-a.nx * b.c + b.nx * a.c) / det;
-  return { kind: "points", pts: [C(x, y)] };
+  return { kind: "points", exact: true, pts: [C((-a.c * b.ny + b.c * a.ny) / det, (-a.nx * b.c + b.nx * a.c) / det)] };
 }
-function interLineCircle(gl, gc) {
-  const L = normCurve(gl), K = circleData(gc);
-  const nx = 2 * L.W.re, ny = -2 * L.W.im, c = L.K;
-  const nn = Math.hypot(nx, ny);
-  if (nn < 1e-14) return { kind: "none" };
-  const ux = nx / nn, uy = ny / nn, cc = c / nn;
-  const P0 = C(-cc * ux, -cc * uy);                 // pied de la perpendiculaire depuis O
-  const dx = -uy, dy = ux;
-  const wx = P0.re - K.center.re, wy = P0.im - K.center.im;
-  const bq = wx * dx + wy * dy;
-  const cq = wx * wx + wy * wy - K.r2;
-  let disc = bq * bq - cq;
-  if (disc < -1e-9 * (1 + Math.abs(cq))) return { kind: "none" };
+/* Droite ∩ conique : on parametre la droite, on tombe sur un trinome. Exact. */
+function interLineConic(kl, kc) {
+  const L = lineData(kl);
+  if (!L) return { kind: "none" };
+  const px = -L.c * L.nx, py = -L.c * L.ny, dx = -L.ny, dy = L.nx;
+  const A = kc.A * dx * dx + kc.B * dx * dy + kc.C * dy * dy;
+  const B = 2 * kc.A * px * dx + kc.B * (px * dy + py * dx) + 2 * kc.C * py * dy + kc.D * dx + kc.E * dy;
+  const Cc = kc.A * px * px + kc.B * px * py + kc.C * py * py + kc.D * px + kc.E * py + kc.F;
+  const at = (t) => C(px + t * dx, py + t * dy);
+  if (Math.abs(A) < 1e-13) {
+    if (Math.abs(B) < 1e-13) return Math.abs(Cc) < 1e-11 ? { kind: "same" } : { kind: "none" };
+    return { kind: "points", exact: true, pts: [at(-Cc / B)] };
+  }
+  let disc = B * B - 4 * A * Cc;
+  const ech = B * B + Math.abs(4 * A * Cc) + 1;
+  if (disc < -1e-11 * ech) return { kind: "none" };
   if (disc < 0) disc = 0;
   const s = Math.sqrt(disc);
-  const t1 = -bq - s, t2 = -bq + s;
-  const pts = [C(P0.re + t1 * dx, P0.im + t1 * dy)];
-  if (s > 1e-9) pts.push(C(P0.re + t2 * dx, P0.im + t2 * dy));
-  return { kind: "points", pts };
+  const pts = [at((-B - s) / (2 * A))];
+  if (s > 1e-10 * Math.sqrt(ech)) pts.push(at((-B + s) / (2 * A)));
+  return { kind: "points", exact: true, pts };
 }
-function interCircleCircle(g1, g2) {
-  const A = normCurve(g1), B = normCurve(g2);
-  const rad = GC(0, csub(A.W, B.W), A.K - B.K);      // axe radical
-  if (czero(rad.W)) return Math.abs(rad.K) < 1e-9 ? { kind: "same" } : { kind: "none" };
-  return interLineCircle(rad, A);
+function interCircleCircle(k1, k2) {
+  const a = kNormLead(k1), b = kNormLead(k2);
+  const rad = K(0, 0, 0, a.D - b.D, a.E - b.E, a.F - b.F);   // axe radical
+  if (Math.abs(rad.D) < 1e-12 && Math.abs(rad.E) < 1e-12)
+    return Math.abs(rad.F) < 1e-10 ? { kind: "same" } : { kind: "none" };
+  return interLineConic(rad, a);
 }
-function intersect(g1, g2) {
-  if (isLine(g1) && isLine(g2)) return interLineLine(g1, g2);
-  if (isLine(g1)) return interLineCircle(g1, g2);
-  if (isLine(g2)) return interLineCircle(g2, g1);
-  return interCircleCircle(g1, g2);
+const kNormLead = (k) => K(1, k.B / k.A, k.C / k.A, k.D / k.A, k.E / k.A, k.F / k.A);
+
+/* Conique ∩ conique : resultant en y -> polynome de degre 4 en x. Numerique. */
+function interConicConic(k1, k2) {
+  let a = k1, b = k2, rot = 0;
+  if (Math.abs(a.C) < 1e-12 && Math.abs(b.C) < 1e-12) { rot = 0.37; a = kRotate(a, rot); b = kRotate(b, rot); }
+  // conique vue comme trinome en y : a2 y² + a1(x) y + a0(x)
+  const coefY = (k) => ({ q2: [C(k.C)], q1: [C(k.E), C(k.B)], q0: [C(k.F), C(k.D), C(k.A)] });
+  const u = coefY(a), v = coefY(b);
+  const t1 = psub(pmul(u.q2, v.q0), pmul(v.q2, u.q0));
+  const t2 = psub(pmul(u.q2, v.q1), pmul(v.q2, u.q1));
+  const t3 = psub(pmul(u.q1, v.q0), pmul(v.q1, u.q0));
+  const res = psub(pmul(t1, t1), pmul(t2, t3));
+  if (pdeg(res) < 1) return czero(res[0], 1e-12) ? { kind: "same" } : { kind: "none" };
+
+  const xs = dkRoots(res).filter(z => Math.abs(z.im) < 1e-6 * (1 + Math.abs(z.re))).map(z => z.re);
+  const pts = [];
+  for (const x of xs) {
+    for (const y of ysAt(a, x).concat(ysAt(b, x))) {
+      let P = newton2(a, b, x, y);
+      if (!P) continue;
+      if (Math.abs(kEval(a, P.x, P.y)) / kScale(a, P.x, P.y) > 1e-7) continue;
+      if (Math.abs(kEval(b, P.x, P.y)) / kScale(b, P.x, P.y) > 1e-7) continue;
+      if (!pts.some(o => Math.hypot(o.x - P.x, o.y - P.y) < 1e-7 * (1 + Math.abs(P.x) + Math.abs(P.y)))) pts.push(P);
+    }
+  }
+  const back = pts.map(P => {
+    if (!rot) return C(P.x, P.y);
+    const c = Math.cos(rot), s = Math.sin(rot);
+    return C(c * P.x - s * P.y, s * P.x + c * P.y);
+  });
+  return back.length ? { kind: "points", exact: false, pts: back } : { kind: "none" };
+}
+function ysAt(k, x) {
+  const A = k.C, B = k.B * x + k.E, Cc = k.A * x * x + k.D * x + k.F;
+  if (Math.abs(A) < 1e-13) return Math.abs(B) < 1e-13 ? [] : [-Cc / B];
+  const d = B * B - 4 * A * Cc;
+  if (d < 0) return [-B / (2 * A)];
+  const s = Math.sqrt(d);
+  return [(-B - s) / (2 * A), (-B + s) / (2 * A)];
+}
+function newton2(k1, k2, x, y) {
+  for (let it = 0; it < 60; it++) {
+    const f1 = kEval(k1, x, y), f2 = kEval(k2, x, y);
+    const g1x = 2 * k1.A * x + k1.B * y + k1.D, g1y = k1.B * x + 2 * k1.C * y + k1.E;
+    const g2x = 2 * k2.A * x + k2.B * y + k2.D, g2y = k2.B * x + 2 * k2.C * y + k2.E;
+    const det = g1x * g2y - g1y * g2x;
+    if (!isFinite(det) || Math.abs(det) < 1e-14) break;
+    const dx = (f1 * g2y - f2 * g1y) / det, dy = (g1x * f2 - g2x * f1) / det;
+    x -= dx; y -= dy;
+    if (!isFinite(x) || !isFinite(y)) return null;
+    if (Math.hypot(dx, dy) < 1e-14 * (1 + Math.hypot(x, y))) break;
+  }
+  return isFinite(x) && isFinite(y) ? { x, y } : null;
+}
+function intersect(k1, k2) {
+  if (kIsNull(k1) || kIsNull(k2)) return { kind: "same" };
+  const l1 = kIsLine(k1), l2 = kIsLine(k2);
+  if (l1 && l2) return interLineLine(k1, k2);
+  if (l1) return interLineConic(k1, k2);
+  if (l2) return interLineConic(k2, k1);
+  if (kIsCircle(k1) && kIsCircle(k2)) return interCircleCircle(k1, k2);
+  return interConicConic(k1, k2);
 }
 
 /* ==================================================================
-   6. Ecriture des nombres
+   7. Resolution d'ensemble
+   ================================================================== */
+function residual(cond, z) {
+  if (cond.poly) {
+    const v = cabs(peval(cond.poly, z));
+    let s = 0, m = 1;
+    for (const c of cond.poly) { s += cabs(c) * m; m *= Math.max(1, cabs(z)); }
+    return v / (s + 1);
+  }
+  const e = evalForm(cond.form, z);
+  return cabs(e.v) / e.scale;
+}
+const TOL = 1e-6;
+
+function solveAll(conds) {
+  const finis = conds.filter(c => c.points);
+  if (finis.length) {
+    let approx = finis.some(c => c.approx);
+    let cands = finis[0].points;
+    for (const c of conds) {
+      if (c === finis[0]) continue;
+      cands = cands.filter(z => residual(c, z) < TOL);
+    }
+    if (!cands.length) return { kind: "empty" };
+    return { kind: "points", pts: cands, approx, methode: finis[0].methode };
+  }
+  const curves = [];
+  for (const c of conds) for (const k of c.curves) curves.push({ k, cond: c });
+  if (conds.some(c => c.none)) return { kind: "empty" };
+  if (!curves.length) return { kind: "plane" };
+  if (curves.length === 1) return { kind: "curve", curve: curves[0].k };
+
+  let res = null;
+  outer:
+  for (let i = 0; i < curves.length; i++)
+    for (let j = i + 1; j < curves.length; j++) {
+      const r = intersect(curves[i].k, curves[j].k);
+      if (r.kind === "none") return { kind: "empty" };
+      if (r.kind === "points") { res = r; break outer; }
+    }
+  if (!res) return { kind: "curve", curve: curves[0].k };
+
+  const pts = [];
+  for (const z of res.pts) {
+    if (!conds.every(c => residual(c, z) < TOL)) continue;
+    if (!pts.some(o => cabs(csub(o, z)) < 1e-7 * (1 + cabs(z)))) pts.push(z);
+  }
+  if (!pts.length) return { kind: "empty" };
+  const ecart = Math.max(...pts.map(z => Math.max(...conds.map(c => residual(c, z)))));
+  return {
+    kind: "points", pts, approx: !res.exact, ecart,
+    methode: "resultant de deux coniques (degre 4), racines par Durand-Kerner puis Newton"
+  };
+}
+
+/* Une elevation au carre peut inventer des points : on verifie que la courbe
+   en porte au moins un vrai, en la coupant par une grille de droites. */
+function curvePorteUnPoint(cond) {
+  const k = cond.curves[0];
+  if (!k || !k.hint) return true;
+  const h = k.hint, N = 40;
+  for (let i = 0; i <= N; i++) {
+    const t = -h.R + 2 * h.R * i / N;
+    for (const droite of [K(0, 0, 0, 1, 0, -(h.cx + t)), K(0, 0, 0, 0, 1, -(h.cy + t))]) {
+      const r = interLineConic(droite, k);
+      if (r.kind !== "points") continue;
+      for (const z of r.pts) if (residual(cond, z) < TOL) return true;
+    }
+  }
+  return false;
+}
+
+/* Analyse d'une condition ecrite. */
+function analyse(src) {
+  const [L, R] = splitEquation(src);
+  let poly = null, polyErr = null;
+  try { poly = psub(parsePoly(L), parsePoly(R)); }
+  catch (e) { poly = null; if (!(e instanceof NotPoly)) polyErr = e; }
+
+  let form = null, formErr = null;
+  try { form = fsub(parseForm(L), parseForm(R)); } catch (e) { formErr = e; }
+
+  const cond = { src, form, poly: null, curves: [], points: null, approx: false, methode: "" };
+
+  if (poly && pdeg(poly) >= 2) {
+    const r = polyRoots(poly);
+    if (r.all) return { ...cond, curves: [] };
+    cond.poly = poly;
+    cond.points = r.pts;
+    cond.approx = !!r.approx;
+    cond.methode = r.methode;
+    if (form) { try { cond.curves = conicsFromForm(form); } catch (e) { cond.curves = []; } }
+    return cond;
+  }
+  if (!form) throw (formErr || polyErr || new Err("expression illisible"));
+  cond.curves = conicsFromForm(form);
+  if (cond.curves.some(k => kKind(k) === "vide")) { cond.curves = []; cond.none = true; return cond; }
+  if (form.mods.length && cond.curves.length === 1 && !curvePorteUnPoint(cond)) { cond.curves = []; cond.none = true; }
+  return cond;
+}
+
+/* ==================================================================
+   8. Ecriture des nombres et des courbes
    ================================================================== */
 function frac(x) {
-  if (!isFinite(x)) return null;
-  if (Math.abs(x) > 1e6) return null;
+  if (!isFinite(x) || Math.abs(x) > 1e6) return null;
   const sign = x < 0 ? -1 : 1;
   let v = Math.abs(x), p0 = 1, q0 = 0, p1 = Math.floor(v), q1 = 1, rest = v - p1;
   for (let k = 0; k < 24 && q1 <= 100000; k++) {
-    if (Math.abs(p1 / q1 - v) <= 1e-11 * Math.max(1, v)) {
-      if (q1 === 0) return null;
-      return { p: sign * p1, q: q1 };
-    }
+    if (Math.abs(p1 / q1 - v) <= 1e-11 * Math.max(1, v)) return { p: sign * p1, q: q1 };
     if (rest < 1e-13) break;
     const inv = 1 / rest, ai = Math.floor(inv);
     rest = inv - ai;
@@ -604,108 +949,93 @@ function frac(x) {
   return Math.abs(p1 / q1 - v) <= 1e-11 * Math.max(1, v) ? { p: sign * p1, q: q1 } : null;
 }
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const round = (x, n) => { const r = Number(x.toFixed(n)); return Object.is(r, -0) ? 0 : r; };
+
 function num2html(x, unit) {
   const u = unit || "";
   if (Math.abs(x) < 1e-13) return "0";
   const f = frac(x);
-  if (f && f.q === 1) return (f.p === 1 && u ? "" : f.p === -1 && u ? "-" : String(f.p)) + u;
+  if (f && f.q === 1) return (f.p === 1 && u) ? u : (f.p === -1 && u) ? "-" + u : f.p + u;
   if (f && f.q <= 9999) {
     const n = Math.abs(f.p) === 1 && u ? (f.p < 0 ? "-" : "") + u : f.p + u;
     return '<span class="frac"><span class="num">' + esc(n) + '</span><span class="den">' + f.q + "</span></span>";
   }
   return esc(round(x, 6)) + u;
 }
-const round = (x, n) => {
-  const r = Number(x.toFixed(n));
-  return Object.is(r, -0) ? 0 : r;
-};
 function z2html(z) {
   const re = Math.abs(z.re) < 1e-13 ? 0 : z.re, im = Math.abs(z.im) < 1e-13 ? 0 : z.im;
   if (im === 0) return num2html(re);
   if (re === 0) return (im < 0 ? "-" : "") + num2html(Math.abs(im), "i");
   return num2html(re) + (im < 0 ? " &minus; " : " + ") + num2html(Math.abs(im), "i");
 }
-function z2short(z) { return round(z.re, 3) + (z.im < 0 ? " - " : " + ") + Math.abs(round(z.im, 3)) + "i"; }
+const z2short = (z) => round(z.re, 3) + (z.im < 0 ? " - " : " + ") + Math.abs(round(z.im, 3)) + "i";
 
-/* ecriture lisible d'une droite ou d'un cercle */
-function curve2html(g) {
-  if (isLine(g)) {
-    const nx = 2 * g.W.re, ny = -2 * g.W.im, c = g.K;
-    if (Math.abs(nx) < 1e-12 && Math.abs(ny) < 1e-12) return Math.abs(c) < 1e-12 ? "tout le plan" : "aucun point";
-    // on divise par le plus petit coefficient non nul pour rester lisible
-    let k = [nx, ny].filter(v => Math.abs(v) > 1e-12).map(Math.abs).sort((a, b) => a - b)[0];
-    if ((Math.abs(nx) > 1e-12 ? nx : ny) < 0) k = -k;      // on garde le premier terme positif
-    const A = nx / k, B = ny / k, D = -c / k;
-    const parts = [];
-    if (Math.abs(A) > 1e-12) parts.push(num2html(A, "x"));
-    if (Math.abs(B) > 1e-12) parts.push((B < 0 ? "&minus; " : parts.length ? "+ " : "") + num2html(Math.abs(B), "y"));
-    return "droite : " + parts.join(" ") + " = " + num2html(D);
+/* equation lisible d'une conique */
+function conicEq2html(k) {
+  const terms = [[k.A, "x&sup2;"], [k.B, "xy"], [k.C, "y&sup2;"], [k.D, "x"], [k.E, "y"]];
+  const nz = terms.filter(t => Math.abs(t[0]) > 1e-12);
+  if (!nz.length) return Math.abs(k.F) < 1e-12 ? "tout le plan" : "aucun point";
+  let d = nz.map(t => Math.abs(t[0])).sort((a, b) => a - b)[0];
+  if (nz[0][0] < 0) d = -d;
+  const parts = [];
+  for (const [v, lbl] of nz) {
+    const w = v / d;
+    if (parts.length === 0) parts.push(num2html(w, lbl));
+    else parts.push((w < 0 ? "&minus; " : "+ ") + num2html(Math.abs(w), lbl));
   }
-  const d = circleData(g);
-  if (d.r2 < -1e-12) return "aucun point";
-  if (d.r2 < 1e-12) return "point unique : z = " + z2html(d.center);
-  const rf = frac(d.r2);
-  const rTxt = (rf && rf.q === 1 && Number.isInteger(Math.sqrt(rf.p))) ? num2html(Math.sqrt(rf.p)) : "&radic;(" + esc(round(d.r2, 6)) + ")";
-  return "cercle : centre " + z2html(d.center) + ", rayon " + rTxt;
+  return parts.join(" ") + " = " + num2html(-k.F / d);
+}
+function curve2html(k) {
+  const kind = kKind(k);
+  if (kind === "plan")  return "tout le plan";
+  if (kind === "vide")  return "aucun point";
+  if (kind === "droite") return "droite : " + conicEq2html(k);
+  if (kind === "point") { const c = kCircle(k); return "point unique : z = " + z2html(C(c.cx, c.cy)); }
+  if (kind === "cercle") {
+    const c = kCircle(k), rf = frac(c.r2);
+    const rTxt = (rf && rf.q === 1 && Number.isInteger(Math.sqrt(rf.p))) ? num2html(Math.sqrt(rf.p))
+               : "&radic;" + esc(round(c.r2, 6));
+    return "cercle : centre " + z2html(C(c.cx, c.cy)) + ", rayon " + rTxt;
+  }
+  return kind + " : " + conicEq2html(k);
 }
 
 /* ==================================================================
-   7. Resolution complete
-   ================================================================== */
-function solveAll(conds) {
-  const curves = [];
-  for (const c of conds) for (const g of c.curves) curves.push(g);
-  if (conds.some(c => c.none)) return { kind: "empty" };
-  if (curves.length === 0) return { kind: "plane" };
-  if (curves.length === 1) return { kind: "curve", curve: curves[0] };
-
-  let res = null;
-  outer:
-  for (let a = 0; a < curves.length; a++) {
-    for (let b = a + 1; b < curves.length; b++) {
-      const r = intersect(curves[a], curves[b]);
-      if (r.kind === "none") return { kind: "empty" };
-      if (r.kind === "points") { res = r; break outer; }
-    }
-  }
-  if (!res) return { kind: "curve", curve: curves[0] };      // toutes les courbes confondues
-
-  const pts = res.pts.filter(z => curves.every(g => residual(g, z) < 1e-7));
-  if (pts.length === 0) return { kind: "empty" };
-  return { kind: "points", pts };
-}
-
-/* ==================================================================
-   8. Ecran
+   9. Ecran
    ================================================================== */
 const cv = document.getElementById("cv");
 const ctx = cv.getContext("2d");
 const view = { cx: 0, cy: 0, scale: 48 };
 let state = { conds: [], sol: null };
 
+const DPR = () => Math.min(window.devicePixelRatio || 1, 2);
+const W = () => cv.width / DPR();
+const H = () => cv.height / DPR();
+const sx = (x) => W() / 2 + (x - view.cx) * view.scale;
+const sy = (y) => H() / 2 - (y - view.cy) * view.scale;
+const mx = (px) => view.cx + (px - W() / 2) / view.scale;
+const my = (py) => view.cy - (py - H() / 2) / view.scale;
+
 function resize() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = cv.parentElement.clientWidth;
-  const tall = window.innerWidth >= 920 ? 0.74 : 0.5;
+  const dpr = DPR(), w = cv.parentElement.clientWidth;
+  const tall = window.innerWidth >= 920 ? 0.74 : 0.44;
   const h = Math.max(280, Math.min(w, Math.round(window.innerHeight * tall)));
   cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
   cv.style.height = h + "px";
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   draw();
 }
-const W = () => cv.width / (Math.min(window.devicePixelRatio || 1, 2));
-const H = () => cv.height / (Math.min(window.devicePixelRatio || 1, 2));
-const sx = (x) => W() / 2 + (x - view.cx) * view.scale;
-const sy = (y) => H() / 2 - (y - view.cy) * view.scale;
-const mx = (px) => view.cx + (px - W() / 2) / view.scale;
-const my = (py) => view.cy - (py - H() / 2) / view.scale;
-
 function niceStep(target) {
-  const raw = target / view.scale;
-  const e = Math.pow(10, Math.floor(Math.log10(raw)));
-  const m = raw / e;
+  const raw = target / view.scale, e = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / e;
   return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * e;
 }
+function fmtTick(v) {
+  const f = frac(v);
+  if (f && f.q === 1) return String(f.p);
+  if (f && f.q <= 16) return f.p + "/" + f.q;
+  return String(round(v, 4));
+}
+function fmtImTick(v) { const t = fmtTick(v); return t === "1" ? "i" : t === "-1" ? "-i" : t + "i"; }
 
 function draw() {
   const w = W(), h = H();
@@ -716,85 +1046,101 @@ function draw() {
   const x0 = Math.floor(mx(0) / step) * step, x1 = mx(w);
   const y0 = Math.floor(my(h) / step) * step, y1 = my(0);
 
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = "#0c2419";
+  ctx.lineWidth = 1; ctx.strokeStyle = "#0c2419";
   ctx.beginPath();
   for (let x = x0; x <= x1; x += step) { const p = Math.round(sx(x)) + 0.5; ctx.moveTo(p, 0); ctx.lineTo(p, h); }
   for (let y = y0; y <= y1; y += step) { const p = Math.round(sy(y)) + 0.5; ctx.moveTo(0, p); ctx.lineTo(w, p); }
   ctx.stroke();
 
-  // axes
   ctx.strokeStyle = "#1d5b41"; ctx.lineWidth = 1.2;
   const ax = Math.round(sy(0)) + 0.5, ay = Math.round(sx(0)) + 0.5;
   ctx.beginPath(); ctx.moveTo(0, ax); ctx.lineTo(w, ax); ctx.moveTo(ay, 0); ctx.lineTo(ay, h); ctx.stroke();
 
-  // graduations
-  ctx.fillStyle = "#2f9c66";
-  ctx.font = '11px "IBM Plex Mono", monospace';
+  ctx.fillStyle = "#2f9c66"; ctx.font = '11px "IBM Plex Mono", monospace';
   ctx.textAlign = "center"; ctx.textBaseline = "top";
   const clampY = Math.min(Math.max(ax, 2), h - 16);
-  for (let x = x0; x <= x1; x += step) {
-    if (Math.abs(x) < step / 2) continue;
-    ctx.fillText(fmtTick(x), sx(x), clampY + 4);
-  }
+  for (let x = x0; x <= x1; x += step) if (Math.abs(x) > step / 2) ctx.fillText(fmtTick(x), sx(x), clampY + 4);
   ctx.textAlign = "right"; ctx.textBaseline = "middle";
   const clampX = Math.min(Math.max(ay, 26), w - 4);
-  for (let y = y0; y <= y1; y += step) {
-    if (Math.abs(y) < step / 2) continue;
-    ctx.fillText(fmtImTick(y), clampX - 5, sy(y));
-  }
+  for (let y = y0; y <= y1; y += step) if (Math.abs(y) > step / 2) ctx.fillText(fmtImTick(y), clampX - 5, sy(y));
   ctx.fillStyle = "#1a5638";
-  ctx.textAlign = "right"; ctx.textBaseline = "bottom";
-  ctx.fillText("Re", w - 8, h - 6);
-  ctx.textAlign = "left"; ctx.textBaseline = "top";
-  ctx.fillText("Im", 8, 6);
+  ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText("Re", w - 8, h - 6);
+  ctx.textAlign = "left";  ctx.textBaseline = "top";    ctx.fillText("Im", 8, 6);
 
-  // courbes
   state.conds.forEach((c, idx) => {
     const col = idx === 0 ? "#4dff9a" : "#7de3ff";
-    (c.curves || []).forEach(g => drawCurve(g, col));
+    (c.curves || []).forEach(k => drawCurve(k, col, c));
   });
-
-  // solutions
   if (state.sol && state.sol.kind === "points") state.sol.pts.forEach((z, k) => drawPoint(z, k, state.sol.pts.length));
 
   document.getElementById("viewinfo").textContent =
     "1 carreau = " + fmtTick(step) + "   |   zoom " + Math.round(view.scale) + " px/u";
 }
-function fmtImTick(v) {
-  const t = fmtTick(v);
-  if (t === "1") return "i";
-  if (t === "-1") return "-i";
-  return t + "i";
-}
-function fmtTick(v) {
-  const f = frac(v);
-  if (f && f.q === 1) return String(f.p);
-  if (f && f.q <= 16) return f.p + "/" + f.q;
-  return String(round(v, 4));
-}
 
-function drawCurve(g, col) {
+function drawCurve(k, col, cond) {
+  const kind = kKind(k);
+  if (kind === "plan" || kind === "vide") return;
   ctx.save();
-  ctx.strokeStyle = col; ctx.lineWidth = 1.6;
-  ctx.shadowColor = col; ctx.shadowBlur = 8;
-  ctx.beginPath();
-  if (isLine(g)) {
-    const n = normCurve(g), nx = 2 * n.W.re, ny = -2 * n.W.im, c = n.K;
-    const nn = Math.hypot(nx, ny);
-    if (nn < 1e-14) { ctx.restore(); return; }
-    const ux = nx / nn, uy = ny / nn, cc = c / nn;
-    const px = -cc * ux, py = -cc * uy, dx = -uy, dy = ux;
-    const far = (Math.hypot(W(), H()) / view.scale) + Math.hypot(view.cx - px, view.cy - py) + 10;
+  ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.shadowColor = col; ctx.shadowBlur = 8;
+  if (kind === "point") { const c = kCircle(k); ctx.restore(); drawDot(C(c.cx, c.cy), col); return; }
+  if (kind === "droite") {
+    const L = lineData(k);
+    const px = -L.c * L.nx, py = -L.c * L.ny, dx = -L.ny, dy = L.nx;
+    const far = Math.hypot(W(), H()) / view.scale + Math.hypot(view.cx - px, view.cy - py) + 10;
+    ctx.beginPath();
     ctx.moveTo(sx(px - far * dx), sy(py - far * dy));
     ctx.lineTo(sx(px + far * dx), sy(py + far * dy));
+    ctx.stroke();
+  } else if (kind === "cercle") {
+    const c = kCircle(k);
+    ctx.beginPath(); ctx.arc(sx(c.cx), sy(c.cy), Math.sqrt(c.r2) * view.scale, 0, Math.PI * 2); ctx.stroke();
   } else {
-    const d = circleData(g);
-    if (d.r2 <= 1e-12) { ctx.restore(); if (d.r2 > -1e-12) drawDot(d.center, col); return; }
-    ctx.arc(sx(d.center.re), sy(d.center.im), d.r * view.scale, 0, Math.PI * 2);
+    drawImplicit(k, cond);                            // ellipse, hyperbole, parabole
+  }
+  ctx.restore();
+}
+/* Trace une conique quelconque par carres marchants sur la zone visible. */
+function drawImplicit(k, cond) {
+  /* apres une elevation au carre, une branche entiere peut etre parasite */
+  const filtre = cond && cond.form && cond.form.mods.length ? cond : null;
+  const w = W(), h = H();
+  const nx = Math.min(150, Math.max(50, Math.round(w / 5)));
+  const ny = Math.min(150, Math.max(50, Math.round(h / 5)));
+  const x0 = mx(0), x1 = mx(w), y0 = my(h), y1 = my(0);
+  const dx = (x1 - x0) / nx, dy = (y1 - y0) / ny;
+  const row = new Float64Array(nx + 1), next = new Float64Array(nx + 1);
+  for (let i = 0; i <= nx; i++) row[i] = kEval(k, x0 + i * dx, y0);
+  ctx.beginPath();
+  for (let j = 0; j < ny; j++) {
+    const ya = y0 + j * dy, yb = ya + dy;
+    for (let i = 0; i <= nx; i++) next[i] = kEval(k, x0 + i * dx, yb);
+    for (let i = 0; i < nx; i++) {
+      const xa = x0 + i * dx, xb = xa + dx;
+      const v00 = row[i], v10 = row[i + 1], v01 = next[i], v11 = next[i + 1];
+      const cross = [];
+      const put = (u, v, ax_, ay_, bx_, by_) => {
+        if ((u > 0) === (v > 0) || u === v) return;
+        const t = u / (u - v);
+        cross.push([ax_ + t * (bx_ - ax_), ay_ + t * (by_ - ay_)]);
+      };
+      put(v00, v10, xa, ya, xb, ya);
+      put(v10, v11, xb, ya, xb, yb);
+      put(v01, v11, xa, yb, xb, yb);
+      put(v00, v01, xa, ya, xa, yb);
+      if (cross.length === 2 || cross.length === 4) {
+        for (let s = 0; s + 1 < cross.length; s += 2) {
+          if (filtre) {
+            const mxx = (cross[s][0] + cross[s + 1][0]) / 2, myy = (cross[s][1] + cross[s + 1][1]) / 2;
+            if (residual(filtre, C(mxx, myy)) > 0.02) continue;
+          }
+          ctx.moveTo(sx(cross[s][0]), sy(cross[s][1]));
+          ctx.lineTo(sx(cross[s + 1][0]), sy(cross[s + 1][1]));
+        }
+      }
+    }
+    row.set(next);
   }
   ctx.stroke();
-  ctx.restore();
 }
 function drawDot(z, col) {
   ctx.save(); ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 8;
@@ -805,18 +1151,19 @@ function drawPoint(z, k, total) {
   ctx.save();
   ctx.strokeStyle = "#ffb454"; ctx.fillStyle = "#ffb454";
   ctx.shadowColor = "#ffb454"; ctx.shadowBlur = 12; ctx.lineWidth = 1.4;
-  ctx.beginPath(); ctx.moveTo(px - 11, py); ctx.lineTo(px - 4, py);
+  ctx.beginPath();
+  ctx.moveTo(px - 11, py); ctx.lineTo(px - 4, py);
   ctx.moveTo(px + 4, py); ctx.lineTo(px + 11, py);
   ctx.moveTo(px, py - 11); ctx.lineTo(px, py - 4);
-  ctx.moveTo(px, py + 4); ctx.lineTo(px, py + 11); ctx.stroke();
+  ctx.moveTo(px, py + 4); ctx.lineTo(px, py + 11);
+  ctx.stroke();
   ctx.beginPath(); ctx.arc(px, py, 4.5, 0, Math.PI * 2); ctx.stroke();
   ctx.beginPath(); ctx.arc(px, py, 1.8, 0, Math.PI * 2); ctx.fill();
   ctx.shadowBlur = 0;
   ctx.font = '12px "IBM Plex Mono", monospace';
   ctx.textBaseline = "bottom";
   const label = (total > 1 ? "z" + (k + 1) + " = " : "z = ") + z2short(z);
-  const wide = ctx.measureText(label).width;
-  const left = px + 14 + wide > W() - 34;
+  const left = px + 14 + ctx.measureText(label).width > W() - 34;
   ctx.textAlign = left ? "right" : "left";
   ctx.fillText(label, px + (left ? -14 : 14), py - 10);
   ctx.restore();
@@ -824,24 +1171,21 @@ function drawPoint(z, k, total) {
 
 function fitView() {
   const pts = [];
+  let rad = 0, conique = false;
   if (state.sol && state.sol.kind === "points") pts.push(...state.sol.pts);
-  let rad = 0;
-  state.conds.forEach(c => (c.curves || []).forEach(g => {
-    if (!isLine(g)) {
-      const d = circleData(g);
-      pts.push(d.center);
-      rad = Math.max(rad, d.r);
-    }
+  state.conds.forEach(c => (c.curves || []).forEach(k => {
+    const kind = kKind(k);
+    if (kind === "cercle") { const d = kCircle(k); pts.push(C(d.cx, d.cy)); rad = Math.max(rad, Math.sqrt(d.r2)); }
+    else if (kind === "point") { const d = kCircle(k); pts.push(C(d.cx, d.cy)); }
+    else if (kind === "ellipse" || kind === "hyperbole" || kind === "parabole") conique = true;
   }));
-  if (pts.length === 0) { view.cx = 0; view.cy = 0; view.scale = 48; draw(); return; }
+  if (!pts.length) { view.cx = 0; view.cy = 0; view.scale = conique ? 34 : 48; draw(); return; }
   let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
   pts.forEach(p => { minx = Math.min(minx, p.re); maxx = Math.max(maxx, p.re); miny = Math.min(miny, p.im); maxy = Math.max(maxy, p.im); });
   minx -= rad; maxx += rad; miny -= rad; maxy += rad;
-  const cx = (minx + maxx) / 2, cy = (miny + maxy) / 2;
+  view.cx = (minx + maxx) / 2; view.cy = (miny + maxy) / 2;
   const spanx = Math.max(maxx - minx, 6), spany = Math.max(maxy - miny, 6);
-  view.cx = cx; view.cy = cy;
-  view.scale = Math.min(W() / (spanx * 1.35), H() / (spany * 1.35));
-  view.scale = Math.max(6, Math.min(view.scale, 220));
+  view.scale = Math.max(6, Math.min(Math.min(W() / (spanx * 1.35), H() / (spany * 1.35)), 220));
   draw();
 }
 function solutionVisible() {
@@ -865,12 +1209,11 @@ cv.addEventListener("pointermove", e => {
     view.cy += (e.clientY - prev.clientY) / view.scale;
     draw();
   } else if (pointers.size === 2) {
-    const [p, q] = [...pointers.values()];
-    const dist = Math.hypot(p.clientX - q.clientX, p.clientY - q.clientY);
-    const midx = (p.clientX + q.clientX) / 2, midy = (p.clientY + q.clientY) / 2;
+    const [a, b] = [...pointers.values()];
+    const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
     if (pinch) {
       const r = cv.getBoundingClientRect();
-      zoomAt(midx - r.left, midy - r.top, dist / pinch.dist);
+      zoomAt((a.clientX + b.clientX) / 2 - r.left, (a.clientY + b.clientY) / 2 - r.top, dist / pinch.dist);
     }
     pinch = { dist };
   }
@@ -892,47 +1235,72 @@ function zoomAt(px, py, k) {
 document.getElementById("fit").addEventListener("click", fitView);
 
 /* ==================================================================
-   9. Lecture affichee
+   10. Lecture affichee
    ================================================================== */
 const readout = document.getElementById("readout");
+
+function solBlock(z, k, total, sol) {
+  const mod = Math.hypot(z.re, z.im), arg = Math.atan2(z.im, z.re) * 180 / Math.PI;
+  const tag = total > 1 ? "Solution " + (k + 1) : "Solution";
+  const eg = sol.approx ? " &asymp; " : " = ";
+  const badge = sol.approx
+    ? ' <span class="badge">valeur approchee</span> <button type="button" class="why" aria-expanded="false">?</button>'
+    : "";
+  const detail = sol.approx
+    ? '<div class="why-panel" hidden><b>Pourquoi une valeur approchee ?</b><br>' +
+      'Cette solution ne sort pas d\'une formule fermee. Methode employee : ' + esc(sol.methode) + '.<br>' +
+      (sol.ecart !== undefined
+        ? 'Ecart mesure : ' + (sol.ecart < 1e-15
+            ? 'les conditions valent zero a la precision de la machine pres (moins de 10<sup>-15</sup>).'
+            : 'les conditions valent zero a ' + esc(sol.ecart.toExponential(1)) + ' pres, en valeur relative.') + '<br>'
+        : "") +
+      'Les droites, les cercles, les equations du premier et du second degre et les racines n-iemes, eux, sont calcules exactement.</div>'
+    : "";
+  return '<div class="sol' + (sol.approx ? " approx" : "") + '"><span class="tag">' + tag + badge + "</span>z" + eg +
+    z2html(z) + '<span class="approx">&asymp; ' + round(z.re, 6) + (z.im < 0 ? " &minus; " : " + ") +
+    Math.abs(round(z.im, 6)) + "i &nbsp;&middot;&nbsp; |z| &asymp; " + round(mod, 4) +
+    " &nbsp;&middot;&nbsp; arg &asymp; " + round(arg, 2) + "&deg;</span>" + detail + "</div>";
+}
 
 function render() {
   const blocks = [];
   state.conds.forEach((c, idx) => {
     const cls = idx === 0 ? "line" : "line beam";
     if (c.error) {
-      blocks.push('<div class="block"><h2>Condition ' + (idx + 1) + ' <span class="eq">' + esc(c.src) + '</span></h2><p class="err">' + esc(c.error) + "</p></div>");
+      blocks.push('<div class="block"><h2>Condition ' + (idx + 1) + ' <span class="eq">' + esc(c.src) +
+        '</span></h2><p class="err">' + esc(c.error) + "</p></div>");
       return;
     }
-    const rows = (c.curves || []).map(g =>
-      '<p class="' + cls + '"><span class="tag">' + esc(g.part) + "</span>" + curve2html(g) + "</p>").join("");
+    const rows = (c.curves || []).map(k =>
+      '<p class="' + cls + '"><span class="tag">' + esc(k.part || "Courbe") + "</span>" + curve2html(k) + "</p>").join("");
+    const extra = c.points
+      ? '<p class="' + cls + '"><span class="tag">Racines</span>' + c.points.length + " solution" +
+        (c.points.length > 1 ? "s" : "") + " &mdash; " + esc(c.methode) + "</p>"
+      : "";
     blocks.push('<div class="block"><h2>Condition ' + (idx + 1) + ' <span class="eq">' + esc(c.src) + "</span></h2>" +
-      (rows || '<p class="' + cls + '">tout le plan</p>') + "</div>");
+      (extra + rows || '<p class="' + cls + '">tout le plan</p>') + "</div>");
   });
 
   const s = state.sol;
-  let sol = "";
+  let sol;
   if (!s) sol = '<p class="note">Ecris une condition pour commencer.</p>';
   else if (s.kind === "empty") sol = '<p class="err">Aucune solution : les courbes ne se croisent pas.</p>';
   else if (s.kind === "plane") sol = '<p class="note">Tout le plan convient : la condition est toujours vraie.</p>';
   else if (s.kind === "curve")
     sol = '<div class="sol"><span class="tag">Ensemble solution</span>' + curve2html(s.curve) +
-      '<span class="approx">Une seule condition = une courbe entiere. Ajoute une condition 2 pour obtenir un point.</span></div>';
-  else {
-    sol = s.pts.map((z, k) => {
-      const mod = Math.hypot(z.re, z.im);
-      const arg = Math.atan2(z.im, z.re) * 180 / Math.PI;
-      return '<div class="sol"><span class="tag">' + (s.pts.length > 1 ? "Solution " + (k + 1) : "Solution") + "</span>z = " +
-        z2html(z) + '<span class="approx">&asymp; ' + round(z.re, 6) + (z.im < 0 ? " &minus; " : " + ") +
-        Math.abs(round(z.im, 6)) + "i &nbsp;&middot;&nbsp; |z| &asymp; " + round(mod, 4) +
-        " &nbsp;&middot;&nbsp; arg &asymp; " + round(arg, 2) + "&deg;</span></div>";
-    }).join("");
-  }
+      '<span class="approx">Une seule condition = une courbe entiere. Ajoute une condition 2 pour obtenir des points.</span></div>';
+  else sol = s.pts.map((z, k) => solBlock(z, k, s.pts.length, s)).join("");
+
   readout.innerHTML = '<div class="block"><h2>Resultat</h2>' + sol + "</div>" + blocks.join("");
+  readout.querySelectorAll(".why").forEach(b => b.addEventListener("click", () => {
+    const panel = b.closest(".sol").querySelector(".why-panel");
+    panel.hidden = !panel.hidden;
+    b.setAttribute("aria-expanded", String(!panel.hidden));
+  }));
 }
 
 /* ==================================================================
-   10. Boucle
+   11. Boucle
    ================================================================== */
 const in1 = document.getElementById("eq1"), in2 = document.getElementById("eq2");
 const f1 = document.getElementById("f1"), f2 = document.getElementById("f2");
@@ -943,11 +1311,8 @@ function run(autoFit) {
     const src = input.value.trim();
     field.classList.remove("bad");
     if (!src) return;
-    try {
-      const F = parseEquation(src);
-      const r = toCurves(F);
-      conds.push({ src, curves: r.curves, none: r.none, all: r.all });
-    } catch (e) {
+    try { conds.push(analyse(src)); }
+    catch (e) {
       field.classList.add("bad");
       conds.push({ src, error: e instanceof Err ? e.message : "expression illisible", curves: [] });
     }
@@ -960,43 +1325,51 @@ function run(autoFit) {
 }
 
 let timer = null;
-const schedule = () => { clearTimeout(timer); timer = setTimeout(() => run(false), 140); };
-in1.addEventListener("input", schedule);
-in2.addEventListener("input", schedule);
+in1.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => run(false), 140); });
+in2.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => run(false), 140); });
 
-/* clavier de symboles */
 document.getElementById("keypad").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   const target = document.activeElement === in2 ? in2 : in1;
-  const s = target.selectionStart ?? target.value.length;
-  const t = target.selectionEnd ?? s;
-  const ins = b.dataset.ins;
+  const s = target.selectionStart ?? target.value.length, t = target.selectionEnd ?? s, ins = b.dataset.ins;
   target.value = target.value.slice(0, s) + ins + target.value.slice(t);
   target.focus();
   target.setSelectionRange(s + ins.length, s + ins.length);
   run(false);
 });
 
-/* exemples */
 const SAMPLES = [
   { label: "3 + 2z = iz &minus; 4", a: "3 + 2z = iz - 4", b: "" },
+  { label: "z&sup3; = 8", a: "z^3 = 8", b: "" },
+  { label: "z&sup2; + z + 1 = 0", a: "z^2 + z + 1 = 0", b: "" },
   { label: "|z &minus; 1| = 2  et  Re(z) = 1", a: "|z - 1| = 2", b: "Re(z) = 1" },
+  { label: "|z &minus; 1| + |z + 1| = 4", a: "|z - 1| + |z + 1| = 4", b: "Im(z) = 1" },
+  { label: "|z| = Re(z) + 2", a: "|z| = Re(z) + 2", b: "Im(z) = 2" },
   { label: "|z &minus; 1| = |z &minus; i|", a: "|z - 1| = |z - i|", b: "|z| = 2" },
-  { label: "(1 + i)z + conj(z) = 3 + i", a: "(1+i)z + conj(z) = 3 + i", b: "" },
-  { label: "z &times; conj(z) = 4", a: "z*conj(z) = 4", b: "Im(z) = 1" }
+  { label: "(1 + i)z + conj(z) = 3 + i", a: "(1+i)z + conj(z) = 3 + i", b: "" }
 ];
-const samplesBox = document.getElementById("samples");
+const sampleRow = document.getElementById("samples");
 SAMPLES.forEach(s => {
   const b = document.createElement("button");
   b.type = "button"; b.innerHTML = s.label;
-  b.addEventListener("click", () => { in1.value = s.a; in2.value = s.b; run(true); });
-  samplesBox.appendChild(b);
+  b.addEventListener("click", () => {
+    in1.value = s.a; in2.value = s.b; run(true);
+    if (window.innerWidth < 920) document.querySelector(".scope").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  sampleRow.appendChild(b);
+});
+
+const samplesBox = document.getElementById("samplesBox");
+try { if (localStorage.getItem("wessel_samples") === "closed") samplesBox.open = false; } catch (e) { /* stockage indisponible */ }
+samplesBox.addEventListener("toggle", () => {
+  try { localStorage.setItem("wessel_samples", samplesBox.open ? "open" : "closed"); } catch (e) { /* ignore */ }
 });
 
 window.addEventListener("resize", resize);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
 resize();
 run(true);
+
 </script>
 </body>
 </html>
