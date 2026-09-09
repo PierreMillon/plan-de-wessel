@@ -62,9 +62,10 @@ body{
 @media(min-width:920px){
   .work{
     display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);
-    grid-template-areas:"console scope" "samples scope" "readout scope";
+    grid-template-areas:"modes scope" "console scope" "samples scope" "readout scope";
     align-items:start;gap:22px;
   }
+  .modes{grid-area:modes}
   .scope{grid-area:scope;position:sticky;top:18px}
   .console{grid-area:console}
   .samples{grid-area:samples}
@@ -72,6 +73,32 @@ body{
 }
 
 /* ---------- console ---------- */
+.modes{display:flex;border:1px solid var(--edge);border-radius:3px;overflow:hidden}
+.modes button{
+  flex:1;background:transparent;border:0;border-right:1px solid var(--edge);
+  color:var(--phos-dim);font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;
+  text-transform:uppercase;padding:10px 6px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.modes button:last-child{border-right:0}
+.modes button.on{background:rgba(77,255,154,.12);color:var(--phos)}
+.modes button:focus-visible{outline:2px solid var(--phos);outline-offset:-2px}
+
+.bar{text-decoration:overline;text-decoration-thickness:1px}
+.linepanel{display:flex;flex-direction:column;gap:10px}
+.coords{display:flex;gap:10px}
+.coords div{
+  flex:1;border:1px solid var(--edge);border-radius:3px;background:var(--panel);
+  padding:8px 10px;font-size:.9rem;
+}
+.coords .lab{display:block;font-size:.62rem;letter-spacing:.2em;color:var(--solve);margin-bottom:2px}
+.send{
+  background:transparent;border:1px solid var(--phos-faint);color:var(--phos-dim);
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  padding:10px;border-radius:3px;cursor:pointer;
+}
+.send:active{background:var(--phos);color:var(--void);border-color:var(--phos)}
+.send:focus-visible{outline:2px solid var(--phos);outline-offset:1px}
+
 .console{display:flex;flex-direction:column;gap:14px}
 .field{display:flex;flex-direction:column;gap:6px}
 .field label{
@@ -124,8 +151,18 @@ body{
 
 /* ---------- ecran ---------- */
 .scope{display:flex;flex-direction:column;gap:0}
+.scope-head{
+  border:1px solid var(--edge);border-bottom:none;border-radius:4px 4px 0 0;
+  background:var(--panel);padding:10px 12px;display:flex;flex-direction:column;gap:5px;
+  font-size:1rem;line-height:1.4;
+}
+.scope-head .eqline{display:flex;align-items:baseline;gap:9px;color:var(--phos)}
+.scope-head .eqline.beam{color:var(--beam)}
+.scope-head .eqline .pip{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none;transform:translateY(-2px)}
+.scope-head .eqline .txt{overflow-x:auto;white-space:nowrap;letter-spacing:.02em}
+.scope-head .hint{color:var(--phos-faint);font-size:.72rem;letter-spacing:.05em}
 .scope-frame{
-  position:relative;border:1px solid var(--edge);border-radius:4px;overflow:hidden;
+  position:relative;border:1px solid var(--edge);border-radius:0;overflow:hidden;
   background:#030608;
 }
 canvas{display:block;width:100%;height:auto;touch-action:none}
@@ -210,7 +247,13 @@ footer a{color:var(--phos-dim)}
 
   <div class="work">
 
+    <div class="modes" id="modes">
+      <button type="button" id="mEq" class="on">Equation</button>
+      <button type="button" id="mLine">Droite au doigt</button>
+    </div>
+
     <section class="scope">
+      <div class="scope-head" id="scopehead"></div>
       <div class="scope-frame">
         <canvas id="cv" width="600" height="600"></canvas>
         <div class="scanlines"></div>
@@ -230,6 +273,15 @@ footer a{color:var(--phos-dim)}
     </details>
 
     <section class="console">
+      <div class="linepanel" id="linepanel" hidden>
+        <div class="coords">
+          <div><span class="lab">A</span><b id="ptA">&nbsp;</b></div>
+          <div><span class="lab">B</span><b id="ptB">&nbsp;</b></div>
+        </div>
+        <button type="button" class="send" id="send">Envoyer vers condition 1</button>
+      </div>
+
+      <div id="eqpanel">
       <div class="field" id="f1">
         <label for="eq1"><span class="dot c1"></span>Condition 1</label>
         <input id="eq1" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" value="3 + 2z = iz - 4">
@@ -255,6 +307,7 @@ footer a{color:var(--phos-dim)}
         <button type="button" data-ins="Re(">Re(</button>
         <button type="button" data-ins="Im(">Im(</button>
         <button type="button" data-ins="conj(">conj(</button>
+      </div>
       </div>
     </section>
   </div>
@@ -970,20 +1023,40 @@ function z2html(z) {
 }
 const z2short = (z) => round(z.re, 3) + (z.im < 0 ? " - " : " + ") + Math.abs(round(z.im, 3)) + "i";
 
+/* Met une liste de rationnels au meme denominateur, puis simplifie :
+   x - 9y/8 = -7/8  devient  8x - 9y = -7. */
+const pgcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) { const t = a % b; a = b; b = t; } return a; };
+function entiers(vals) {
+  const fr = vals.map(frac);
+  if (fr.some(f => !f || f.q > 5000 || Math.abs(f.p) > 1e9)) return null;
+  let l = 1;
+  for (const f of fr) { l = l / pgcd(l, f.q) * f.q; if (l > 1e7) return null; }
+  const nums = fr.map(f => f.p * (l / f.q));
+  let g = 0;
+  for (const n of nums) g = pgcd(g, n);
+  return g ? nums.map(n => n / g) : nums;
+}
+
 /* equation lisible d'une conique */
-function conicEq2html(k) {
-  const terms = [[k.A, "x&sup2;"], [k.B, "xy"], [k.C, "y&sup2;"], [k.D, "x"], [k.E, "y"]];
-  const nz = terms.filter(t => Math.abs(t[0]) > 1e-12);
-  if (!nz.length) return Math.abs(k.F) < 1e-12 ? "tout le plan" : "aucun point";
-  let d = nz.map(t => Math.abs(t[0])).sort((a, b) => a - b)[0];
-  if (nz[0][0] < 0) d = -d;
-  const parts = [];
-  for (const [v, lbl] of nz) {
-    const w = v / d;
-    if (parts.length === 0) parts.push(num2html(w, lbl));
-    else parts.push((w < 0 ? "&minus; " : "+ ") + num2html(Math.abs(w), lbl));
+function reduceConic(k) {
+  const brut = [k.A, k.B, k.C, k.D, k.E, k.F];
+  let out = entiers(brut);
+  if (!out) {
+    const nz = brut.slice(0, 5).filter(v => Math.abs(v) > 1e-12);
+    if (!nz.length) return brut;
+    let d = nz.map(Math.abs).sort((a, b) => a - b)[0];
+    out = brut.map(v => v / d);
   }
-  return parts.join(" ") + " = " + num2html(-k.F / d);
+  const tete = out.slice(0, 5).find(v => Math.abs(v) > 1e-12);
+  return tete !== undefined && tete < 0 ? out.map(v => -v) : out;
+}
+function conicEq2html(k) {
+  const [A, B, Cc, D, E, F] = reduceConic(k);
+  const nz = [[A, "x&sup2;"], [B, "xy"], [Cc, "y&sup2;"], [D, "x"], [E, "y"]].filter(t => Math.abs(t[0]) > 1e-12);
+  if (!nz.length) return Math.abs(F) < 1e-12 ? "tout le plan" : "aucun point";
+  const parts = nz.map(([v, lbl], i) =>
+    i === 0 ? num2html(v, lbl) : (v < 0 ? "&minus; " : "+ ") + num2html(Math.abs(v), lbl));
+  return parts.join(" ") + " = " + num2html(-F);
 }
 function curve2html(k) {
   const kind = kKind(k);
@@ -1067,14 +1140,24 @@ function draw() {
   ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText("Re", w - 8, h - 6);
   ctx.textAlign = "left";  ctx.textBaseline = "top";    ctx.fillText("Im", 8, 6);
 
+  if (mode === "line") { drawLineMode(); majTete(); return; }
+
   state.conds.forEach((c, idx) => {
     const col = idx === 0 ? "#4dff9a" : "#7de3ff";
     (c.curves || []).forEach(k => drawCurve(k, col, c));
+    if (c.poly && !(c.curves || []).length) {           // degre 3 et plus : on trace Re(P)=0 et Im(P)=0
+      ctx.save();
+      ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.shadowColor = col; ctx.shadowBlur = 7;
+      marching((x, y) => peval(c.poly, C(x, y)).re);
+      marching((x, y) => peval(c.poly, C(x, y)).im);
+      ctx.restore();
+    }
   });
   if (state.sol && state.sol.kind === "points") state.sol.pts.forEach((z, k) => drawPoint(z, k, state.sol.pts.length));
 
   document.getElementById("viewinfo").textContent =
     "1 carreau = " + fmtTick(step) + "   |   zoom " + Math.round(view.scale) + " px/u";
+  majTete();
 }
 
 function drawCurve(k, col, cond) {
@@ -1103,17 +1186,21 @@ function drawCurve(k, col, cond) {
 function drawImplicit(k, cond) {
   /* apres une elevation au carre, une branche entiere peut etre parasite */
   const filtre = cond && cond.form && cond.form.mods.length ? cond : null;
+  marching((x, y) => kEval(k, x, y), filtre ? (x, y) => residual(filtre, C(x, y)) <= 0.02 : null);
+}
+/* Trace { (x,y) : fn(x,y) = 0 } sur la zone visible, par carres marchants. */
+function marching(fn, keep) {
   const w = W(), h = H();
   const nx = Math.min(150, Math.max(50, Math.round(w / 5)));
   const ny = Math.min(150, Math.max(50, Math.round(h / 5)));
   const x0 = mx(0), x1 = mx(w), y0 = my(h), y1 = my(0);
   const dx = (x1 - x0) / nx, dy = (y1 - y0) / ny;
   const row = new Float64Array(nx + 1), next = new Float64Array(nx + 1);
-  for (let i = 0; i <= nx; i++) row[i] = kEval(k, x0 + i * dx, y0);
+  for (let i = 0; i <= nx; i++) row[i] = fn(x0 + i * dx, y0);
   ctx.beginPath();
   for (let j = 0; j < ny; j++) {
     const ya = y0 + j * dy, yb = ya + dy;
-    for (let i = 0; i <= nx; i++) next[i] = kEval(k, x0 + i * dx, yb);
+    for (let i = 0; i <= nx; i++) next[i] = fn(x0 + i * dx, yb);
     for (let i = 0; i < nx; i++) {
       const xa = x0 + i * dx, xb = xa + dx;
       const v00 = row[i], v10 = row[i + 1], v01 = next[i], v11 = next[i + 1];
@@ -1129,10 +1216,7 @@ function drawImplicit(k, cond) {
       put(v00, v01, xa, ya, xa, yb);
       if (cross.length === 2 || cross.length === 4) {
         for (let s = 0; s + 1 < cross.length; s += 2) {
-          if (filtre) {
-            const mxx = (cross[s][0] + cross[s + 1][0]) / 2, myy = (cross[s][1] + cross[s + 1][1]) / 2;
-            if (residual(filtre, C(mxx, myy)) > 0.02) continue;
-          }
+          if (keep && !keep((cross[s][0] + cross[s + 1][0]) / 2, (cross[s][1] + cross[s + 1][1]) / 2)) continue;
           ctx.moveTo(sx(cross[s][0]), sy(cross[s][1]));
           ctx.lineTo(sx(cross[s + 1][0]), sy(cross[s + 1][1]));
         }
@@ -1170,6 +1254,13 @@ function drawPoint(z, k, total) {
 }
 
 function fitView() {
+  if (mode === "line") {
+    const A = handles.A, B = handles.B;
+    view.cx = (A.re + B.re) / 2; view.cy = (A.im + B.im) / 2;
+    const sp = Math.max(Math.abs(A.re - B.re), Math.abs(A.im - B.im), 4) * 2;
+    view.scale = Math.max(6, Math.min(Math.min(W(), H()) / sp, 220));
+    draw(); return;
+  }
   const pts = [];
   let rad = 0, conique = false;
   if (state.sol && state.sol.kind === "points") pts.push(...state.sol.pts);
@@ -1199,12 +1290,26 @@ function solutionVisible() {
 /* ---------- navigation tactile ---------- */
 const pointers = new Map();
 let pinch = null;
-cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); pointers.set(e.pointerId, e); });
+cv.addEventListener("pointerdown", e => {
+  cv.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, e);
+  if (mode === "line" && pointers.size === 1) {
+    const r = cv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+    for (const nom of ["A", "B"]) {
+      const h = handles[nom];
+      if (Math.hypot(sx(h.re) - px, sy(h.im) - py) < 26) { dragging = nom; break; }
+    }
+  }
+});
 cv.addEventListener("pointermove", e => {
   if (!pointers.has(e.pointerId)) return;
   const prev = pointers.get(e.pointerId);
   pointers.set(e.pointerId, e);
-  if (pointers.size === 1) {
+  if (dragging && pointers.size === 1) {
+    const r = cv.getBoundingClientRect();
+    handles[dragging] = C(snapV(mx(e.clientX - r.left)), snapV(my(e.clientY - r.top)));
+    draw(); renderLine();
+  } else if (pointers.size === 1) {
     view.cx -= (e.clientX - prev.clientX) / view.scale;
     view.cy += (e.clientY - prev.clientY) / view.scale;
     draw();
@@ -1219,7 +1324,7 @@ cv.addEventListener("pointermove", e => {
   }
 });
 ["pointerup", "pointercancel", "pointerleave"].forEach(ev =>
-  cv.addEventListener(ev, e => { pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null; }));
+  cv.addEventListener(ev, e => { pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null; if (!pointers.size) dragging = null; }));
 cv.addEventListener("wheel", e => {
   e.preventDefault();
   const r = cv.getBoundingClientRect();
@@ -1263,6 +1368,7 @@ function solBlock(z, k, total, sol) {
 }
 
 function render() {
+  if (mode === "line") return renderLine();
   const blocks = [];
   state.conds.forEach((c, idx) => {
     const cls = idx === 0 ? "line" : "line beam";
@@ -1363,6 +1469,154 @@ const samplesBox = document.getElementById("samplesBox");
 try { if (localStorage.getItem("wessel_samples") === "closed") samplesBox.open = false; } catch (e) { /* stockage indisponible */ }
 samplesBox.addEventListener("toggle", () => {
   try { localStorage.setItem("wessel_samples", samplesBox.open ? "open" : "closed"); } catch (e) { /* ignore */ }
+});
+
+/* ==================================================================
+   12. Mode « droite au doigt » :  geometrie  ->  equation
+   ================================================================== */
+let mode = "eq";
+let dragging = null;
+const handles = { A: C(-2, -1), B: C(2, 2) };
+const snapV = (v) => { const st = niceStep(64) / 4; return Math.round(v / st) * st; };
+
+/* Les cinq ecritures d'une meme droite. */
+function lineWritings() {
+  const A = handles.A, B = handles.B, d = csub(B, A);
+  if (cabs(d) < 1e-9) return null;
+  let p = -d.im, q = d.re, r = p * A.re + q * A.im;
+  const ent = entiers([p, q, r]);
+  if (ent) { [p, q, r] = ent; }
+  else {
+    let g = [p, q].filter(v => Math.abs(v) > 1e-12).map(Math.abs).sort((a, b) => a - b)[0];
+    p /= g; q /= g; r /= g;
+  }
+  if ((Math.abs(p) > 1e-12 ? p : q) < 0) { p = -p; q = -q; r = -r; }
+  const M = C((A.re + B.re) / 2, (A.im + B.im) / 2);
+  /* P et Q sont symetriques par rapport a la droite : on les garde pres d'elle,
+     avec un ecart en puissance de deux pour que les fractions restent lisibles. */
+  let lam = 0.5;
+  while (lam * Math.hypot(p, q) > 2) lam /= 2;
+  return { A, B, d, p, q, r, w: C(p, q),
+           P: C(M.re + p * lam, M.im + q * lam), Q: C(M.re - p * lam, M.im - q * lam) };
+}
+/* coefficient devant un symbole : 1 et -1 s'ecrivent sans parenthese */
+function coefz(c, sym) {
+  if (czero(csub(c, ONE)))  return sym;
+  if (czero(cadd(c, ONE)))  return "&minus;" + sym;
+  return "(" + z2html(c) + ")" + sym;
+}
+const ZBAR = '<span class="bar">z</span>';
+
+function drawLineMode() {
+  const L = lineWritings();
+  if (L) {
+    const n = Math.hypot(L.p, L.q);
+    const px = L.r * L.p / (n * n), py = L.r * L.q / (n * n);
+    const dx = -L.q / n, dy = L.p / n;
+    const far = Math.hypot(W(), H()) / view.scale + Math.hypot(view.cx - px, view.cy - py) + 10;
+    ctx.save();
+    ctx.strokeStyle = "#4dff9a"; ctx.lineWidth = 1.6; ctx.shadowColor = "#4dff9a"; ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(sx(px - far * dx), sy(py - far * dy));
+    ctx.lineTo(sx(px + far * dx), sy(py + far * dy));
+    ctx.stroke();
+    ctx.restore();
+    poignee(L.P, "P", "#2f9c66", true);
+    poignee(L.Q, "Q", "#2f9c66", true);
+    ctx.save();
+    ctx.strokeStyle = "#2f9c66"; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(sx(L.P.re), sy(L.P.im)); ctx.lineTo(sx(L.Q.re), sy(L.Q.im)); ctx.stroke();
+    ctx.restore();
+  }
+  poignee(handles.A, "A", "#ffb454", false);
+  poignee(handles.B, "B", "#ffb454", false);
+}
+function poignee(z, nom, col, petit) {
+  const px = sx(z.re), py = sy(z.im), r = petit ? 3.5 : 7;
+  ctx.save();
+  ctx.strokeStyle = col; ctx.fillStyle = col;
+  ctx.shadowColor = col; ctx.shadowBlur = petit ? 5 : 11; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.stroke();
+  if (!petit) { ctx.beginPath(); ctx.arc(px, py, 2, 0, Math.PI * 2); ctx.fill(); }
+  ctx.shadowBlur = 0;
+  ctx.font = (petit ? "11px" : "bold 13px") + ' "IBM Plex Mono", monospace';
+  ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+  ctx.fillText(nom, px + r + 4, py - r);
+  ctx.restore();
+}
+
+function renderLine() {
+  const L = lineWritings();
+  document.getElementById("ptA").innerHTML = z2html(handles.A);
+  document.getElementById("ptB").innerHTML = z2html(handles.B);
+  majTete();
+  if (!L) {
+    readout.innerHTML = '<div class="block"><h2>Droite tracee</h2><p class="err">A et B sont confondus : deplace un des deux points.</p></div>';
+    return;
+  }
+  const ligne = (tag, corps) => '<p class="line"><span class="tag">' + tag + "</span>" + corps + "</p>";
+  readout.innerHTML =
+    '<div class="block"><h2>La meme droite, cinq ecritures</h2>' +
+    ligne("Reelle", conicEq2html(K(0, 0, 0, L.p, L.q, -L.r))) +
+    ligne("Complexe", coefz(cconj(L.w), " z") + " + " + coefz(L.w, " " + ZBAR) + " = " + num2html(2 * L.r)) +
+    ligne("Compacte", "Re(" + coefz(cconj(L.w), " z") + ") = " + num2html(L.r)) +
+    ligne("Parametrique", "z = " + z2html(L.A) + " + t (" + z2html(L.d) + "),&nbsp; t reel") +
+    ligne("Mediatrice", "|z &minus; (" + z2html(L.P) + ")| = |z &minus; (" + z2html(L.Q) + ")|") +
+    "</div>" +
+    '<div class="block"><h2>A retenir</h2><p class="note">Le coefficient de ' + ZBAR +
+    ' est toujours le conjugue de celui de z, et le second membre est toujours reel. ' +
+    "C'est exactement ce qui rend l'equation reelle, donc ce qui en fait une seule courbe.</p></div>";
+}
+
+/* bandeau au-dessus du graphique */
+function prettyEq(src) {
+  return esc(src).replace(/-/g, "&minus;").replace(/\*/g, " &times; ").replace(/conj\(z\)/g, ZBAR);
+}
+function majTete() {
+  const tete = document.getElementById("scopehead");
+  if (mode === "line") {
+    const L = lineWritings();
+    tete.innerHTML = '<div class="eqline"><span class="pip"></span><span class="txt">' +
+      (L ? conicEq2html(K(0, 0, 0, L.p, L.q, -L.r)) : "A et B confondus") +
+      '</span></div><div class="hint">glisse A et B sur le graphique</div>';
+    return;
+  }
+  const lignes = state.conds.filter(c => c.src).map((c, i) =>
+    '<div class="eqline' + (i ? " beam" : "") + '"><span class="pip"></span><span class="txt">' +
+    prettyEq(c.src) + "</span></div>").join("");
+  tete.innerHTML = lignes || '<div class="hint">ecris une equation ci-dessous</div>';
+}
+
+/* commutateur de mode */
+const mEq = document.getElementById("mEq"), mLine = document.getElementById("mLine");
+const eqpanel = document.getElementById("eqpanel"), linepanel = document.getElementById("linepanel");
+function setMode(m) {
+  mode = m;
+  mEq.classList.toggle("on", m === "eq");
+  mLine.classList.toggle("on", m === "line");
+  eqpanel.hidden = m !== "eq";
+  linepanel.hidden = m !== "line";
+  samplesBox.hidden = m !== "eq";
+  if (m === "line") { renderLine(); fitView(); } else { run(false); }
+}
+mEq.addEventListener("click", () => setMode("eq"));
+mLine.addEventListener("click", () => setMode("line"));
+
+/* renvoyer la droite tracee vers le solveur */
+function zText(z) {
+  const re = Math.abs(z.re) < 1e-12 ? 0 : round(z.re, 6), im = Math.abs(z.im) < 1e-12 ? 0 : round(z.im, 6);
+  if (im === 0) return String(re);
+  const partIm = (Math.abs(im) === 1 ? "" : String(Math.abs(im))) + "i";
+  if (re === 0) return (im < 0 ? "-" : "") + partIm;
+  return re + (im < 0 ? "-" : "+") + partIm;
+}
+document.getElementById("send").addEventListener("click", () => {
+  const L = lineWritings();
+  if (!L) return;
+  in1.value = "|z - (" + zText(L.P) + ")| = |z - (" + zText(L.Q) + ")|";
+  in2.value = "";
+  setMode("eq");
+  run(true);
 });
 
 window.addEventListener("resize", resize);
