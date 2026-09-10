@@ -239,6 +239,12 @@ button.why:focus-visible{outline:2px solid var(--solve);outline-offset:1px}
 .err{border-left:2px solid var(--alert);padding-left:11px;color:var(--alert);font-size:.88rem}
 .note{color:var(--phos-dim);font-size:.78rem;max-width:62ch}
 
+.redac{margin:0;padding-left:1.5em;display:flex;flex-direction:column;gap:8px;color:var(--phos);font-size:.95rem}
+.redac li{line-height:1.7}
+.redac li::marker{color:var(--phos-dim);font-size:.82em}
+.redac .cadre{display:block;border-left:2px solid var(--phos-faint);padding-left:12px;margin:6px 0;color:var(--phos)}
+.redac em{color:var(--phos-dim);font-style:normal}
+
 .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .16em;font-size:.92em}
 .frac .num{border-bottom:1px solid currentColor;padding:0 .28em;line-height:1.2}
 .frac .den{padding:0 .28em;line-height:1.2}
@@ -367,7 +373,7 @@ const cconj = (u) => C(u.re, -u.im);
 const cabs  = (u) => Math.hypot(u.re, u.im);
 const cdiv  = (u, v) => {
   const d = v.re * v.re + v.im * v.im;
-  if (d === 0) throw new Err("division par zero");
+  if (d === 0) throw new Err("division par zéro");
   return C((u.re * v.re + u.im * v.im) / d, (u.im * v.re - u.re * v.im) / d);
 };
 const csqrt = (u) => {
@@ -394,7 +400,7 @@ const padd  = (A, B) => { const n = Math.max(A.length, B.length), R = []; for (l
 const psub  = (A, B) => { const n = Math.max(A.length, B.length), R = []; for (let i = 0; i < n; i++) R.push(csub(A[i] || ZERO, B[i] || ZERO)); return ptrim(R); };
 const pscale = (A, k) => ptrim(A.map(c => cmul(c, k)));
 function pmul(A, B) {
-  if ((A.length - 1) + (B.length - 1) > DEGMAX) throw new Err("degre superieur a " + DEGMAX + " : hors du solveur");
+  if ((A.length - 1) + (B.length - 1) > DEGMAX) throw new Err("degré supérieur à " + DEGMAX + " : hors du solveur");
   const R = new Array(A.length + B.length - 1).fill(ZERO);
   for (let i = 0; i < A.length; i++) for (let j = 0; j < B.length; j++) R[i + j] = cadd(R[i + j], cmul(A[i], B[j]));
   return ptrim(R);
@@ -447,30 +453,30 @@ function dkRoots(P) {
 function polyRoots(P) {
   const Q = ptrim(P), n = Q.length - 1;
   if (n < 1) return czero(Q[0]) ? { all: true } : { pts: [] };
-  if (n === 1) return { pts: [cdiv(C(-Q[0].re, -Q[0].im), Q[1])], approx: false, methode: "equation du premier degre" };
+  if (n === 1) return { pts: [cdiv(C(-Q[0].re, -Q[0].im), Q[1])], approx: false, methode: "équation du premier degré" };
 
   const milieuNul = Q.slice(1, n).every(c => czero(c, 1e-12));
   if (milieuNul) {                             // z^n = w : forme polaire, exact
     const w = cdiv(C(-Q[0].re, -Q[0].im), Q[n]);
-    if (czero(w)) return { pts: [ZERO], approx: false, methode: "racine n-ieme de zero" };
+    if (czero(w)) return { pts: [ZERO], approx: false, methode: "racine n-ième de zéro" };
     const R = Math.pow(cabs(w), 1 / n), th = Math.atan2(w.im, w.re) / n, pts = [];
     for (let k = 0; k < n; k++) {
       const t = th + 2 * Math.PI * k / n;
       pts.push(C(R * Math.cos(t), R * Math.sin(t)));
     }
-    return { pts, approx: false, methode: "racines n-iemes en forme polaire" };
+    return { pts, approx: false, methode: "racines n-ièmes en forme polaire" };
   }
-  if (n === 2) {                               // formule du second degre, exacte
+  if (n === 2) {                               // formule du second degré, exacte
     const [c0, c1, c2] = Q;
     const disc = csub(cmul(c1, c1), cmul(C(4), cmul(c2, c0)));
     const s = csqrt(disc), deux = cmul(C(2), c2);
     return {
       pts: [cdiv(csub(s, c1), deux), cdiv(csub(C(-s.re, -s.im), c1), deux)]
              .filter((z, i, a) => i === 0 || cabs(csub(z, a[0])) > 1e-12),
-      approx: false, methode: "formule du second degre"
+      approx: false, methode: "formule du second degré"
     };
   }
-  return { pts: dkRoots(Q), approx: true, methode: "iterations de Durand-Kerner, affinees par Newton" };
+  return { pts: dkRoots(Q), approx: true, methode: "itérations de Durand-Kerner, affinées par Newton" };
 }
 
 /* ==================================================================
@@ -504,7 +510,7 @@ const fre = (F) => fscale(fadd(F, fconj(F)), C(0.5));
 const fim = (F) => fscale(fsub(F, fconj(F)), C(0, -0.5));
 
 function fabsv(F) {
-  if (!isAffine(F)) throw new Err("module d'une expression de degre 2 : hors du solveur");
+  if (!isAffine(F)) throw new Err("module d'une expression de degré 2 : hors du solveur");
   return { p: ZERO, r: ZERO, q: ZERO, a: ZERO, b: ZERO, c: ZERO, mods: [{ k: ONE, f: { a: F.a, b: F.b, c: F.c } }] };
 }
 const sameAff = (x, y) => czero(csub(x.a, y.a)) && czero(csub(x.b, y.b)) && czero(csub(x.c, y.c));
@@ -525,14 +531,14 @@ function fmul(F, G) {
       c: cmul(F.c, G.c), mods: []
     };
   }
-  throw new Err("produit de degre 3 ou plus : hors du solveur");
+  throw new Err("produit de degré 3 ou plus : hors du solveur");
 }
 function fdiv(F, G) {
   if (!isConst(G)) throw new Err("division par une expression contenant z : hors du solveur");
   return fscale(F, cdiv(ONE, G.c));
 }
 function fpow(F, n) {
-  if (!Number.isInteger(n) || n < 0 || n > 6) throw new Err("exposant invalide (entier de 0 a 6)");
+  if (!Number.isInteger(n) || n < 0 || n > 6) throw new Err("exposant invalide (entier de 0 à 6)");
   let r = fconst(ONE);
   for (let k = 0; k < n; k++) r = fmul(r, F);
   return r;
@@ -592,7 +598,7 @@ function tokenize(src) {
     }
     if (ch === "=") { out.push({ t: "cmp", v: "=" }); p++; continue; }
     if ("+-*/^()|".includes(ch)) { out.push({ t: ch }); p++; continue; }
-    throw new Err("caractere inattendu : " + ch);
+    throw new Err("caractère inattendu : " + ch);
   }
   return out;
 }
@@ -635,26 +641,26 @@ function makeParser(alg) {
       const base = primary();
       if (peek() && peek().t === "^") {
         p++;
-        if (peek() && peek().t === "-") throw new Err("exposant negatif : hors du solveur");
+        if (peek() && peek().t === "-") throw new Err("exposant négatif : hors du solveur");
         const e = eat("num").v;
-        if (!Number.isInteger(e) || e < 0 || e > DEGMAX) throw new Err("exposant invalide (entier de 0 a " + DEGMAX + ")");
+        if (!Number.isInteger(e) || e < 0 || e > DEGMAX) throw new Err("exposant invalide (entier de 0 à " + DEGMAX + ")");
         return alg.pow(base, e);
       }
       return base;
     }
     function primary() {
       const tk = peek();
-      if (!tk) throw new Err("expression incomplete");
+      if (!tk) throw new Err("expression incomplète");
       if (tk.t === "num") { p++; return alg.num(tk.v); }
       if (tk.t === "i")   { p++; return alg.imag(); }
       if (tk.t === "z")   { p++; return alg.z(); }
       if (tk.t === "(")   { p++; const v = expr(); eat(")"); return v; }
       if (tk.t === "|")   { p++; bars++; const v = expr(); bars--; eat("|"); return alg.abs(v); }
       if (tk.t === "fn")  { p++; eat("("); const v = expr(); eat(")"); return alg.fn(tk.v, v); }
-      throw new Err("expression mal formee");
+      throw new Err("expression mal formée");
     }
     const v = expr();
-    if (p !== tokens.length) throw new Err("expression mal formee");
+    if (p !== tokens.length) throw new Err("expression mal formée");
     return v;
   };
 }
@@ -740,7 +746,7 @@ function kRotate(k, t) {
 function affNoConj(f) {
   if (czero(f.b)) return { a: f.a, c: f.c };
   if (czero(f.a)) return { a: cconj(f.b), c: cconj(f.c) };
-  throw new Err("module contenant a la fois z et conj(z) : hors du solveur");
+  throw new Err("module contenant à la fois z et conj(z) : hors du solveur");
 }
 /* |alpha z + gamma| = s * |z - a0| */
 function modCenter(f) {
@@ -761,16 +767,16 @@ function conicsFromForm(F) {
   }
   const rest = { p, r, q, a, b, c };
   const restQuadratic = !czero(rest.p) || !czero(rest.r) || !czero(rest.q);
-  if (restQuadratic) throw new Err("module melange a un terme de degre 2 : hors du solveur");
+  if (restQuadratic) throw new Err("module mêlé à un terme de degré 2 : hors du solveur");
 
   if (mods.length === 1) {
     const m = mods[0];
-    if (Math.abs(m.k.im) > 1e-11) throw new Err("module a coefficient complexe : hors du solveur");
+    if (Math.abs(m.k.im) > 1e-11) throw new Err("module à coefficient complexe : hors du solveur");
     // partie sans module, qui doit etre reelle :  R = 2Re(a z) + c
     if (!czero(csub(rest.b, cconj(rest.a))) || Math.abs(rest.c.im) > 1e-11)
-      throw new Err("condition non reelle : hors du solveur");
+      throw new Err("condition non réelle : hors du solveur");
     const M = modCenter(m.f);
-    if (M.s === 0) throw new Err("module sans z : rien a resoudre");
+    if (M.s === 0) throw new Err("module sans z : rien à résoudre");
     const w = m.k.re * M.s;                    // w |z - a0| + R = 0  ->  w²|z-a0|² = R²
     const Rl = { x: 2 * rest.a.re, y: -2 * rest.a.im, k: rest.c.re };   // R = Rl.x*x + Rl.y*y + Rl.k
     const w2 = w * w, ax = M.a0.re, ay = M.a0.im;
@@ -787,14 +793,14 @@ function conicsFromForm(F) {
   }
   if (mods.length === 2) {
     const [m1, m2] = mods;
-    if (Math.abs(m1.k.im) > 1e-11 || Math.abs(m2.k.im) > 1e-11) throw new Err("module a coefficient complexe : hors du solveur");
+    if (Math.abs(m1.k.im) > 1e-11 || Math.abs(m2.k.im) > 1e-11) throw new Err("module à coefficient complexe : hors du solveur");
     if (!czero(rest.a) || !czero(rest.b) || Math.abs(rest.c.im) > 1e-11)
       throw new Err("deux modules et un terme en z : hors du solveur");
     const A = modCenter(m1.f), B = modCenter(m2.f);
     if (A.s === 0 || B.s === 0) throw new Err("module sans z : hors du solveur");
     const w1 = m1.k.re * A.s, w2 = m2.k.re * B.s;
     if (Math.abs(Math.abs(w1) - Math.abs(w2)) > 1e-11)
-      throw new Err("deux modules de poids differents (ovale de Cassini) : hors du solveur");
+      throw new Err("deux modules de poids différents (ovale de Cassini) : hors du solveur");
     const w = Math.abs(w1);
     let a1 = A.a0, a2 = B.a0, k = -rest.c.re / w;
     if (Math.sign(w1) !== Math.sign(w2)) {     // |z-a1| - |z-a2| = k
@@ -1012,7 +1018,7 @@ function solveAll(conds) {
   const ecart = Math.max(...pts.map(z => Math.max(...conds.map(c => residual(c, z)))));
   return {
     kind: "points", pts, approx: !res.exact, ecart,
-    methode: "resultant de deux coniques (degre 4), racines par Durand-Kerner puis Newton"
+    methode: "résultant de deux coniques (degré 4), racines par Durand-Kerner puis Newton"
   };
 }
 
@@ -1052,17 +1058,36 @@ function newtonNum(f1, f2, x, y) {
   }
   return C(x, y);
 }
-/* Cherche les points ou f1 et f2 s'annulent, en semant sur des carres
-   de taille croissante. */
+/* Cherche les points ou f1 et f2 s'annulent. On ne lance Newton que depuis
+   les cases ou les DEUX fonctions changent de signe : une racine commune ne
+   peut etre ailleurs (sauf tangence), et cela evite de semer partout. */
 function racinesNumeriques(f1, f2) {
   const pts = [];
   for (const R of [4, 16, 64]) {
-    const N = 26;
-    for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) {
-      const z = newtonNum(f1, f2, -R + 2 * R * i / N, -R + 2 * R * j / N);
+    const N = 24, pas = 2 * R / N;
+    const g1 = [], g2 = [];
+    for (let i = 0; i <= N; i++) {
+      const li1 = [], li2 = [], x = -R + i * pas;
+      for (let j = 0; j <= N; j++) { const y = -R + j * pas; li1.push(f1(x, y)); li2.push(f2(x, y)); }
+      g1.push(li1); g2.push(li2);
+    }
+    const graines = [];
+    const change = (v) => v.every(isFinite) && v.some(t => t > 0) && v.some(t => t < 0);
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const a = [g1[i][j], g1[i + 1][j], g1[i][j + 1], g1[i + 1][j + 1]];
+      const b = [g2[i][j], g2[i + 1][j], g2[i][j + 1], g2[i + 1][j + 1]];
+      if (change(a) && change(b)) graines.push([-R + (i + 0.5) * pas, -R + (j + 0.5) * pas]);
+    }
+    if (!graines.length && R === 4) {          // aucune case franche : semis leger, sur la petite boite seulement
+      const M = 10;
+      for (let i = 0; i <= M; i++) for (let j = 0; j <= M; j++)
+        graines.push([-R + 2 * R * i / M, -R + 2 * R * j / M]);
+    }
+    for (const [gx, gy] of graines) {
+      const z = newtonNum(f1, f2, gx, gy);
       if (!z) continue;
-      if (Math.abs(f1(z.re, z.im)) > 1e-7 * (1 + Math.abs(z.re) + Math.abs(z.im))) continue;
-      if (Math.abs(f2(z.re, z.im)) > 1e-7 * (1 + Math.abs(z.re) + Math.abs(z.im))) continue;
+      const ech = 1 + Math.abs(z.re) + Math.abs(z.im);
+      if (Math.abs(f1(z.re, z.im)) > 1e-7 * ech || Math.abs(f2(z.re, z.im)) > 1e-7 * ech) continue;
       if (!pts.some(o => cabs(csub(o, z)) < 1e-6 * (1 + cabs(z)))) pts.push(z);
     }
     if (pts.length) break;
@@ -1141,7 +1166,7 @@ function solveImplicite(conds) {
   if (!pts.length) return { kind: "empty" };
   const ecart = Math.max(...pts.map(z => Math.max(...conds.map(c => residual(c, z)))));
   return { kind: "points", pts, approx: true, ecart,
-           methode: "courbes implicites croisees par la methode de Newton, depuis une grille de departs" };
+           methode: "courbes implicites croisées par la méthode de Newton, depuis une grille de départs" };
 }
 
 /* Analyse d'une condition ecrite. */
@@ -1161,7 +1186,7 @@ function analyse(src) {
     const val = form ? ((z) => evalForm(form, z).v) : (() => { const f = (z) => csub(parseFunc(L)(z), parseFunc(R)(z)); f(C(0.3, 0.4)); return f; })();
     const temoins = [C(0.31, 0.47), C(-1.7, 2.3), C(2.2, -1.1), C(-0.9, -3.3)];
     if (!temoins.every(z => { const v = val(z); return Math.abs(v.im) < 1e-9 * (1 + Math.abs(v.re)); }))
-      throw new Err("on ne compare que des nombres reels : ajoute Re(...), Im(...) ou un module");
+      throw new Err("on ne compare que des nombres réels : ajoute Re(...), Im(...) ou un module");
     cond.valeur = (z) => val(z).re;
   }
 
@@ -1189,7 +1214,7 @@ function analyse(src) {
   cond.func = EF;
   cond.implicits = implicitsFromFunc(EF);
   cond.approx = true;
-  cond.methode = "courbe implicite, intersections par la methode de Newton";
+  cond.methode = "courbe implicite, intersections par la méthode de Newton";
   return cond;
 }
 
@@ -1649,6 +1674,144 @@ function solBlock(z, k, total, sol) {
     " &nbsp;&middot;&nbsp; arg &asymp; " + round(arg, 2) + "&deg;</span>" + detail + "</div>";
 }
 
+/* ------------------------------------------------------------------
+   La redaction : ce qu'il faut ecrire sur la copie, pas seulement la
+   reponse. On ne la produit que pour les formes ou elle est certaine ;
+   ailleurs on n'affiche rien plutot qu'une demonstration inventee.
+   ------------------------------------------------------------------ */
+function argPi(t) {
+  const f = frac(t / Math.PI);
+  if (f && f.q <= 24 && Math.abs(f.p) <= 48) {
+    if (f.p === 0) return "0";
+    const num = Math.abs(f.p) === 1 ? "&pi;" : Math.abs(f.p) + "&pi;";
+    const corps = f.q === 1 ? num : '<span class="frac"><span class="num">' + num + '</span><span class="den">' + f.q + "</span></span>";
+    return (f.p < 0 ? "&minus;" : "") + corps;
+  }
+  return esc(round(t, 6)) + " rad";
+}
+const par = (z) => (Math.abs(z.re) > 1e-13 && Math.abs(z.im) > 1e-13) ? "(" + z2html(z) + ")" : z2html(z);
+const cadre = (t) => '<span class="cadre">' + t + "</span>";
+
+function redaction() {
+  const conds = state.conds.filter(c => !c.error);
+  const sol = state.sol;
+  if (!conds.length || !sol) return null;
+  const eg = conds.filter(c => !c.ineq), iq = conds.filter(c => c.ineq);
+  const P = [];
+
+  /* --- une seule equation --- */
+  if (eg.length === 1 && !iq.length) {
+    const c = eg[0];
+
+    if (c.poly && sol.kind === "points") {
+      const Q = c.poly, n = Q.length - 1;
+      const milieuNul = Q.slice(1, n).every(t => czero(t, 1e-12));
+      if (milieuNul && n >= 2) {
+        const w = cdiv(C(-Q[0].re, -Q[0].im), Q[n]);
+        const rho = cabs(w), th = Math.atan2(w.im, w.re);
+        P.push("On ramène l'équation à la forme z<sup>" + n + "</sup> = w, avec w = " + z2html(w) + ".");
+        P.push("On écrit w sous forme exponentielle : |w| = " + num2html(rho) +
+               " et arg(w) = " + argPi(th) + ", donc w = " + num2html(rho) + " e<sup>i" + argPi(th) + "</sup>.");
+        P.push("En posant z = r e<sup>i&alpha;</sup>, l'équation équivaut à " +
+               cadre("r<sup>" + n + "</sup> = " + num2html(rho) + " &nbsp; et &nbsp; " + n +
+                     "&alpha; &equiv; " + argPi(th) + " &nbsp;(mod 2&pi;)"));
+        P.push("D'où r = " + num2html(Math.pow(rho, 1 / n)) + " et &alpha; = " +
+               argPi(th / n) + " + " + (n === 1 ? "2k&pi;" : '<span class="frac"><span class="num">2k&pi;</span><span class="den">' + n + "</span></span>") +
+               ", pour k = 0, 1, &hellip;, " + (n - 1) + ".");
+        P.push("Les " + n + " solutions sont donc :" + cadre(sol.pts.map((z, i) =>
+               "z<sub>" + i + "</sub> = " + z2html(z)).join("<br>")));
+        return P;
+      }
+      if (n === 2) {
+        const [c0, c1, c2] = Q;
+        const disc = csub(cmul(c1, c1), cmul(C(4), cmul(c2, c0)));
+        const d = csqrt(disc);
+        P.push("Équation du second degré : a z&sup2; + b z + c = 0 avec a = " + z2html(c2) +
+               ", b = " + z2html(c1) + ", c = " + z2html(c0) + ".");
+        P.push("On calcule le discriminant :" + cadre("&Delta; = b&sup2; &minus; 4ac = " + z2html(disc)));
+        P.push("Une racine carrée de &Delta; est &delta; = " + z2html(d) +
+               " <em>(on vérifie bien &delta;&sup2; = &Delta;)</em>.");
+        P.push("Les solutions sont z = " +
+               '<span class="frac"><span class="num">&minus;b &plusmn; &delta;</span><span class="den">2a</span></span>' + ".");
+        P.push("On obtient :" + cadre(sol.pts.map((z, i) => "z<sub>" + (i + 1) + "</sub> = " + z2html(z)).join("<br>")));
+        return P;
+      }
+    }
+
+    const F = c.form;
+    if (F && F.mods.length === 0 && czero(F.p) && czero(F.r) && czero(F.q) && sol.kind === "points") {
+      if (czero(F.b) && !czero(F.a)) {                     // z seul : on isole
+        const a = F.a, mc = C(-F.c.re, -F.c.im);
+        const num = cmul(mc, cconj(a)), den = cabs(a) * cabs(a);
+        P.push("L'équation se met sous la forme " + cadre(coefz(a, " z") + " = " + z2html(mc)));
+        P.push("Comme " + par(a) + " n'est pas nul, on peut diviser :" +
+               cadre("z = " + '<span class="frac"><span class="num">' + z2html(mc) + '</span><span class="den">' + z2html(a) + "</span></span>"));
+        P.push("On multiplie le numérateur et le dénominateur par le conjugué de " + par(a) +
+               ", soit " + par(cconj(a)) + ", pour rendre le dénominateur réel :" +
+               cadre("z = " + '<span class="frac"><span class="num">' + z2html(num) + '</span><span class="den">' + num2html(den) + "</span></span>"));
+        P.push("Conclusion : l'équation admet une unique solution," + cadre("z = " + z2html(sol.pts[0])));
+        return P;
+      }
+      if (!czero(F.b) && c.curves.length === 2) {          // z et conj(z) : on identifie
+        const [L1, L2] = c.curves.map(reduceConic);
+        const det = L1[3] * L2[4] - L1[4] * L2[3];
+        P.push("z et " + ZBAR + " apparaissent tous les deux : on pose z = x + iy, avec x et y réels.");
+        P.push("En séparant partie réelle et partie imaginaire, l'équation équivaut au système :" +
+               cadre(conicEq2html(c.curves[0]) + "<br>" + conicEq2html(c.curves[1])));
+        P.push("Le déterminant de ce système vaut " + num2html(det) +
+               ", non nul : il admet donc une solution unique.");
+        P.push("On résout et on revient à z = x + iy :" + cadre("z = " + z2html(sol.pts[0])));
+        return P;
+      }
+    }
+
+    if (sol.kind === "curve" && sol.curve) {               // un ensemble de points
+      const k = sol.curve, kind = kKind(k);
+      if (kind === "cercle") {
+        const d = kCircle(k);
+        P.push("La condition s'écrit |z &minus; &omega;| = r : la distance de z au point &omega; est constante.");
+        P.push("Or l'ensemble des points situés à une distance fixée d'un point donné est un cercle.");
+        P.push("Ici :" + cadre("cercle de centre " + z2html(C(d.cx, d.cy)) + " et de rayon " + racine2html(d.r2)));
+        return P;
+      }
+      if (kind === "droite") {
+        P.push("On pose z = x + iy, avec x et y réels.");
+        P.push("La condition devient une équation du premier degré en x et y :" + cadre(conicEq2html(k)));
+        P.push("L'ensemble cherché est donc une droite.");
+        return P;
+      }
+      P.push("On pose z = x + iy, avec x et y réels. La condition devient :" + cadre(conicEq2html(k)));
+      P.push("L'ensemble cherché est " + kKind(k) + ".");
+      return P;
+    }
+  }
+
+  /* --- deux conditions qui se croisent --- */
+  if (eg.length === 2 && sol.kind === "points" && eg.every(c => c.curves && c.curves.length)) {
+    P.push("On traduit chaque condition en un ensemble de points du plan.");
+    eg.forEach((c, i) => P.push("Condition " + (i + 1) + " <em>(" + esc(c.src) + ")</em> : " +
+      c.curves.map(k => curve2html(k)).join(", puis ") + "."));
+    P.push("Les solutions cherchées sont les points communs à ces deux ensembles.");
+    P.push("On les détermine, et on vérifie qu'ils satisfont bien les deux conditions :" +
+      cadre(sol.pts.map((z, i) => "z<sub>" + (i + 1) + "</sub> = " + z2html(z)).join("<br>")));
+    return P;
+  }
+
+  /* --- une region --- */
+  if (iq.length && sol.kind === "region") {
+    P.push("Chaque inégalité délimite une partie du plan, bordée par la courbe d'égalité.");
+    conds.forEach((c, i) => {
+      const bord = (c.curves || []).map(k => curve2html(k)).join(", ");
+      P.push("Condition " + (i + 1) + " <em>(" + esc(c.src) + ")</em> : la frontière est " + (bord || "une courbe") +
+             ", et l'inégalité retient le cote " + (c.op === "<" || c.op === "<=" ? "intérieur" : "extérieur") + ".");
+    });
+    P.push("L'ensemble solution est l'intersection de ces parties" +
+           (conds.some(c => c.op === "<=" || c.op === ">=") ? ", frontières comprises là où le comparateur est large." : ", frontières exclues."));
+    return P;
+  }
+  return null;
+}
+
 function render() {
   if (mode !== "eq") return renderShape();
   const blocks = [];
@@ -1691,7 +1854,11 @@ function render() {
       '<span class="approx">Une seule condition = une courbe entière. Ajoute une condition 2 pour obtenir des points.</span></div>';
   else sol = s.pts.map((z, k) => solBlock(z, k, s.pts.length, s)).join("");
 
-  readout.innerHTML = '<div class="block"><h2>Résultat</h2>' + sol + "</div>" + blocks.join("");
+  const etapes = redaction();
+  const bloc = etapes
+    ? '<div class="block"><h2>Rédaction</h2><ol class="redac"><li>' + etapes.join("</li><li>") + "</li></ol></div>"
+    : "";
+  readout.innerHTML = '<div class="block"><h2>Résultat</h2>' + sol + "</div>" + bloc + blocks.join("");
   readout.querySelectorAll(".why").forEach(b => b.addEventListener("click", () => {
     const panel = b.closest(".sol").querySelector(".why-panel");
     panel.hidden = !panel.hidden;
