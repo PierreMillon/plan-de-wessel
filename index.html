@@ -184,11 +184,12 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
 }
 .vignette{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 90px rgba(0,0,0,.85)}
 .scope-bar{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
   border:1px solid var(--edge);border-top:none;border-radius:0 0 4px 4px;
   padding:7px 10px;background:var(--panel);font-size:.7rem;color:var(--phos-dim);
   letter-spacing:.08em;
 }
+.scope-bar .actions{display:flex;gap:6px;margin-left:auto}
 .scope-bar button{
   background:transparent;border:1px solid var(--edge);color:var(--phos-dim);
   font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;padding:5px 10px;
@@ -273,7 +274,11 @@ footer a{color:var(--phos-dim)}
       </div>
       <div class="scope-bar">
         <span id="viewinfo">&nbsp;</span>
-        <button type="button" id="fit">CADRER</button>
+        <span class="actions">
+          <button type="button" id="fit">CADRER</button>
+          <button type="button" id="copier">COPIER</button>
+          <button type="button" id="png">PNG</button>
+        </span>
       </div>
     </section>
 
@@ -352,6 +357,9 @@ footer a{color:var(--phos-dim)}
     Une équation complexe, c'est <b>deux équations réelles</b> : la partie réelle et la
     partie imaginaire. Chacune trace une droite ou un cercle, et la solution est leur
     <b>intersection</b>.
+    <br><br>
+    <b>COPIER</b> met le graphique dans le presse-papiers, <b>PNG</b> le télécharge.
+    Le téléchargement fonctionne sur ce site ; dans le visualiseur Claude, seul COPIER marche.
     <br><br>
     Glisser pour déplacer, pincer ou molette pour zoomer.
     Écris <code>z</code> pour l'inconnue, <code>conj(z)</code> pour le conjugué,
@@ -1645,6 +1653,69 @@ function zoomAt(px, py, k) {
   draw();
 }
 document.getElementById("fit").addEventListener("click", fitView);
+
+/* ---------- export de l'image ---------- */
+function texteLegende() {
+  if (mode !== "eq") {
+    const L = formeCourante();
+    const base = L ? (shape === "droite" ? "droite" : "cercle") : "";
+    const f = mode === "trans" ? transformation() : null;
+    return (base + (f && !f.erreur ? "   f(z) = " + f.src : "")).trim();
+  }
+  return state.conds.filter(c => c.src).map(c => c.src).join("     et     ");
+}
+/* Recopie le graphique dans une image, avec l'equation en en-tete. */
+function imageExport() {
+  const d = DPR(), entete = 34, w = W(), h = H();
+  const c2 = document.createElement("canvas");
+  c2.width = Math.round(w * d); c2.height = Math.round((h + entete) * d);
+  const g = c2.getContext("2d");
+  g.setTransform(d, 0, 0, d, 0, 0);
+  g.fillStyle = "#080d12"; g.fillRect(0, 0, w, h + entete);
+  g.fillStyle = "#4dff9a";
+  g.font = '13px "IBM Plex Mono", ui-monospace, monospace';
+  g.textBaseline = "middle"; g.textAlign = "left";
+  g.fillText(texteLegende() || "Plan de Wessel", 11, entete / 2);
+  g.fillStyle = "#1a5638";
+  g.textAlign = "right";
+  g.fillText("plan de Wessel", w - 11, entete / 2);
+  g.drawImage(cv, 0, entete, w, h);
+  return c2;
+}
+let minuteur = null;
+function flash(msg) {
+  const info = document.getElementById("viewinfo");
+  const avant = info.textContent;
+  info.textContent = msg;
+  clearTimeout(minuteur);
+  minuteur = setTimeout(() => { if (info.textContent === msg) info.textContent = avant; }, 2200);
+}
+document.getElementById("copier").addEventListener("click", () => {
+  imageExport().toBlob(async (blob) => {
+    if (!blob) { flash("export impossible"); return; }
+    try {
+      if (!navigator.clipboard || !window.ClipboardItem) throw new Error("sans presse-papiers");
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      flash("image copiée — colle avec Ctrl+V");
+    } catch (e) {
+      flash("presse-papiers refusé : utilise PNG");
+    }
+  }, "image/png");
+});
+document.getElementById("png").addEventListener("click", () => {
+  imageExport().toBlob((blob) => {
+    if (!blob) { flash("export impossible"); return; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "plan-de-wessel.png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    flash("PNG envoyé au navigateur");
+  }, "image/png");
+});
 
 /* ==================================================================
    10. Lecture affichee
