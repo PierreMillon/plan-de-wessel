@@ -358,8 +358,8 @@ footer a{color:var(--phos-dim)}
     partie imaginaire. Chacune trace une droite ou un cercle, et la solution est leur
     <b>intersection</b>.
     <br><br>
-    <b>COPIER</b> met le graphique dans le presse-papiers, <b>PNG</b> le télécharge.
-    Le téléchargement fonctionne sur ce site ; dans le visualiseur Claude, seul COPIER marche.
+    <b>COPIER</b> met le graphique dans le presse-papiers, <b>PNG</b> l'enregistre en fichier.
+    L'image porte l'équation en en-tête, pour rester lisible une fois collée ailleurs.
     <br><br>
     Glisser pour déplacer, pincer ou molette pour zoomer.
     Écris <code>z</code> pour l'inconnue, <code>conj(z)</code> pour le conjugué,
@@ -1702,18 +1702,38 @@ document.getElementById("copier").addEventListener("click", () => {
     }
   }, "image/png");
 });
+/* Enregistrement du fichier. Dans le visualiseur Claude, le téléchargement
+   direct est inerte : on passe par la capacité prévue pour ça. Ailleurs,
+   un lien de téléchargement ordinaire. */
+async function sauverPNG(blob) {
+  let saveur = null;
+  try {
+    if (window.claude && typeof window.claude.use === "function") saveur = await window.claude.use("downloads");
+  } catch (e) { saveur = null; }
+
+  if (saveur) {
+    try {
+      await saveur.save({ filename: "plan-de-wessel.png", data: blob });
+      flash("image enregistrée");
+    } catch (e) {
+      flash(e && e.code === "declined" ? "enregistrement annulé" : "enregistrement impossible");
+    }
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "plan-de-wessel.png";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  flash("PNG téléchargé");
+}
 document.getElementById("png").addEventListener("click", () => {
   imageExport().toBlob((blob) => {
     if (!blob) { flash("export impossible"); return; }
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "plan-de-wessel.png";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
-    flash("PNG envoyé au navigateur");
+    sauverPNG(blob);
   }, "image/png");
 });
 
