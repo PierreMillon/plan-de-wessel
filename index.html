@@ -15,15 +15,15 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
-  --void:#04070a;
+  --void:#02050a;
   --panel:#080d12;
   --panel-2:#0b1219;
   --edge:#153025;
-  --grid:#0c2419;
-  --axis:#1d5b41;
-  --phos:#4dff9a;
-  --phos-dim:#2f9c66;
-  --phos-faint:#1a5638;
+  --grid:#0e3020;
+  --axis:#22714f;
+  --phos:#39ff88;
+  --phos-dim:#35b878;
+  --phos-faint:#1f6b48;
   --beam:#7de3ff;
   --beam-dim:#3f8fa6;
   --solve:#ffb454;
@@ -43,7 +43,7 @@ body{
   line-height:1.55;
   padding:18px 16px 40px;
   padding-bottom:calc(40px + env(safe-area-inset-bottom));
-  background-image:radial-gradient(120% 70% at 50% -10%,#0a1a14 0%,var(--void) 62%);
+  background-image:radial-gradient(120% 70% at 50% -10%,#08251a 0%,var(--void) 62%);
   min-height:100vh;
 }
 .shell{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
@@ -52,7 +52,7 @@ body{
 .masthead{display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--edge);padding-bottom:12px}
 .masthead h1{
   font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,7vw,2.3rem);
-  margin:0;letter-spacing:.14em;text-shadow:0 0 14px rgba(77,255,154,.35);
+  margin:0;letter-spacing:.14em;text-shadow:0 0 18px rgba(57,255,136,.5);
 }
 .masthead .sub{margin:0;color:var(--phos-dim);font-size:.78rem;letter-spacing:.05em}
 .thesis{margin:0;color:var(--phos-dim);font-size:.8rem;max-width:62ch}
@@ -107,7 +107,7 @@ body{
   display:flex;align-items:center;gap:8px;
 }
 .field label .dot{width:8px;height:8px;border-radius:50%;flex:none}
-.dot.c1{background:var(--phos);box-shadow:0 0 8px var(--phos)}
+.dot.c1{background:var(--phos);box-shadow:0 0 12px var(--phos)}
 .dot.c2{background:var(--beam);box-shadow:0 0 8px var(--beam)}
 .field input{
   width:100%;background:var(--panel);border:1px solid var(--edge);border-radius:3px;
@@ -132,13 +132,6 @@ body{
 .quizhaut{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .quizscore{font-size:.9rem;color:var(--phos);letter-spacing:.04em}
 .quizscore b{color:var(--solve)}
-.niveaux{display:flex;gap:5px}
-.niveaux button{
-  background:var(--panel-2);border:1px solid var(--edge);color:var(--phos-dim);
-  font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;
-  padding:7px 10px;border-radius:3px;cursor:pointer;
-}
-.niveaux button.on{background:rgba(77,255,154,.12);color:var(--phos);border-color:var(--phos-dim)}
 .quizmsg{margin:0;font-size:.95rem;min-height:1.5em;color:var(--phos-dim)}
 .quizmsg.bon{color:var(--phos)}
 .quizmsg.rate{color:var(--alert)}
@@ -190,15 +183,15 @@ body{
 .scope-head .hint{color:var(--phos-faint);font-size:.72rem;letter-spacing:.05em}
 .scope-frame{
   position:relative;border:1px solid var(--edge);border-radius:0;overflow:hidden;
-  background:#030608;
+  background:#02050a;
 }
 canvas{display:block;width:100%;height:auto;touch-action:none}
 .scanlines{
   position:absolute;inset:0;pointer-events:none;
-  background:repeating-linear-gradient(to bottom,rgba(0,0,0,.22) 0 1px,transparent 1px 3px);
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,.4) 0 1px,transparent 1px 3px);
   mix-blend-mode:multiply;
 }
-.vignette{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 90px rgba(0,0,0,.85)}
+.vignette{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 120px rgba(0,0,0,.98)}
 .scope-bar{
   display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
   border:1px solid var(--edge);border-top:none;border-radius:0 0 4px 4px;
@@ -339,10 +332,6 @@ footer a{color:var(--phos-dim)}
     <section class="quizpanel" id="quizpanel" hidden>
       <div class="quizhaut">
         <span class="quizscore" id="quizscore">&nbsp;</span>
-        <span class="niveaux" id="niveaux">
-          <button type="button" data-niv="1" class="on">Repérage</button>
-          <button type="button" data-niv="2">Calcul</button>
-        </span>
       </div>
       <p class="quizmsg" id="quizmsg">&nbsp;</p>
       <button type="button" class="send" id="suivant">Nouvelle question</button>
@@ -1388,30 +1377,30 @@ function fmtImTick(v) { const t = fmtTick(v); return t === "1" ? "i" : t === "-1
 function draw() {
   const w = W(), h = H();
   ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = "#030608"; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = "#02050a"; ctx.fillRect(0, 0, w, h);
 
   const step = niceStep(64);
   const x0 = Math.floor(mx(0) / step) * step, x1 = mx(w);
   const y0 = Math.floor(my(h) / step) * step, y1 = my(0);
 
-  ctx.lineWidth = 1; ctx.strokeStyle = "#0c2419";
+  ctx.lineWidth = 1; ctx.strokeStyle = "#0e3020";
   ctx.beginPath();
   for (let x = x0; x <= x1; x += step) { const p = Math.round(sx(x)) + 0.5; ctx.moveTo(p, 0); ctx.lineTo(p, h); }
   for (let y = y0; y <= y1; y += step) { const p = Math.round(sy(y)) + 0.5; ctx.moveTo(0, p); ctx.lineTo(w, p); }
   ctx.stroke();
 
-  ctx.strokeStyle = "#1d5b41"; ctx.lineWidth = 1.2;
+  ctx.strokeStyle = "#22714f"; ctx.lineWidth = 1.2;
   const ax = Math.round(sy(0)) + 0.5, ay = Math.round(sx(0)) + 0.5;
   ctx.beginPath(); ctx.moveTo(0, ax); ctx.lineTo(w, ax); ctx.moveTo(ay, 0); ctx.lineTo(ay, h); ctx.stroke();
 
-  ctx.fillStyle = "#2f9c66"; ctx.font = '11px "IBM Plex Mono", monospace';
+  ctx.fillStyle = "#35b878"; ctx.font = '11px "IBM Plex Mono", monospace';
   ctx.textAlign = "center"; ctx.textBaseline = "top";
   const clampY = Math.min(Math.max(ax, 2), h - 16);
   for (let x = x0; x <= x1; x += step) if (Math.abs(x) > step / 2) ctx.fillText(fmtTick(x), sx(x), clampY + 4);
   ctx.textAlign = "right"; ctx.textBaseline = "middle";
   const clampX = Math.min(Math.max(ay, 26), w - 4);
   for (let y = y0; y <= y1; y += step) if (Math.abs(y) > step / 2) ctx.fillText(fmtImTick(y), clampX - 5, sy(y));
-  ctx.fillStyle = "#1a5638";
+  ctx.fillStyle = "#1f6b48";
   ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText("Re", w - 8, h - 6);
   ctx.textAlign = "left";  ctx.textBaseline = "top";    ctx.fillText("Im", 8, 6);
 
@@ -1422,12 +1411,12 @@ function draw() {
   if (ineqs.length) shadeRegion(ineqs);
 
   state.conds.forEach((c, idx) => {
-    const col = idx === 0 ? "#4dff9a" : "#7de3ff";
+    const col = idx === 0 ? "#39ff88" : "#7de3ff";
     ctx.save();
     if (c.ineq) ctx.setLineDash([5, 4]);               // frontiere d'une inegalite : en pointilles
     (c.curves || []).forEach(k => drawCurve(k, col, c));
     if ((c.implicits || (c.poly && !(c.curves || []).length))) {
-      ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.shadowColor = col; ctx.shadowBlur = 7;
+      ctx.strokeStyle = col; ctx.lineWidth = 1.8; ctx.shadowColor = col; ctx.shadowBlur = 16;
       if (c.implicits) c.implicits.forEach(im => marching(im.fn));
       else { marching((x, y) => peval(c.poly, C(x, y)).re); marching((x, y) => peval(c.poly, C(x, y)).im); }
     }
@@ -1447,7 +1436,7 @@ function drawCurve(k, col, cond) {
   const kind = kKind(k);
   if (kind === "plan" || kind === "vide") return;
   ctx.save();
-  ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.shadowColor = col; ctx.shadowBlur = 8;
+  ctx.strokeStyle = col; ctx.lineWidth = 1.9; ctx.shadowColor = col; ctx.shadowBlur = 18;
   if (kind === "point") { const c = kCircle(k); ctx.restore(); drawDot(C(c.cx, c.cy), col); return; }
   if (kind === "droite") {
     const L = lineData(k);
@@ -1513,7 +1502,7 @@ function marching(fn, keep) {
 function shadeRegion(conds) {
   const pas = 5, w = W(), h = H();
   ctx.save();
-  ctx.fillStyle = "rgba(77,255,154,.12)";
+  ctx.fillStyle = "rgba(57,255,136,.14)";
   for (let py = 0; py < h; py += pas)
     for (let px = 0; px < w; px += pas) {
       const z = C(mx(px + pas / 2), my(py + pas / 2));
@@ -1528,7 +1517,7 @@ function surlignerArc(sol) {
   const garde = (x, y) => sol.ineqs.every(c => holds(c, C(x, y)));
   ctx.save();
   ctx.strokeStyle = "#ffb454"; ctx.lineWidth = 2.6;
-  ctx.shadowColor = "#ffb454"; ctx.shadowBlur = 10;
+  ctx.shadowColor = "#ffb454"; ctx.shadowBlur = 20;
   ctx.lineCap = "round";
   const kind = kKind(k);
   if (kind === "droite" || kind === "cercle") {
@@ -1577,22 +1566,23 @@ function drawPoint(z, k, total) {
   const px = sx(z.re), py = sy(z.im);
   ctx.save();
   ctx.strokeStyle = "#ffb454"; ctx.fillStyle = "#ffb454";
-  ctx.shadowColor = "#ffb454"; ctx.shadowBlur = 12; ctx.lineWidth = 1.4;
+  ctx.shadowColor = "#ffb454"; ctx.shadowBlur = 22; ctx.lineWidth = 1.6;
   ctx.beginPath();
-  ctx.moveTo(px - 11, py); ctx.lineTo(px - 4, py);
-  ctx.moveTo(px + 4, py); ctx.lineTo(px + 11, py);
-  ctx.moveTo(px, py - 11); ctx.lineTo(px, py - 4);
-  ctx.moveTo(px, py + 4); ctx.lineTo(px, py + 11);
+  ctx.moveTo(px - 14, py); ctx.lineTo(px - 6, py);
+  ctx.moveTo(px + 6, py); ctx.lineTo(px + 14, py);
+  ctx.moveTo(px, py - 14); ctx.lineTo(px, py - 6);
+  ctx.moveTo(px, py + 6); ctx.lineTo(px, py + 14);
   ctx.stroke();
-  ctx.beginPath(); ctx.arc(px, py, 4.5, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI * 2); ctx.stroke();
   ctx.beginPath(); ctx.arc(px, py, 1.8, 0, Math.PI * 2); ctx.fill();
   ctx.shadowBlur = 0;
   ctx.font = '12px "IBM Plex Mono", monospace';
   ctx.textBaseline = "bottom";
   const label = (total > 1 ? "z" + (k + 1) + " = " : "z = ") + z2short(z);
-  const left = px + 14 + ctx.measureText(label).width > W() - 34;
+  const ecart = 26;                                  /* au-dela du viseur et de la case */
+  const left = px + ecart + ctx.measureText(label).width > W() - 34;
   ctx.textAlign = left ? "right" : "left";
-  ctx.fillText(label, px + (left ? -14 : 14), py - 10);
+  ctx.fillText(label, px + (left ? -ecart : ecart), py - 14);
   ctx.restore();
 }
 
@@ -1704,11 +1694,11 @@ function imageExport() {
   const g = c2.getContext("2d");
   g.setTransform(d, 0, 0, d, 0, 0);
   g.fillStyle = "#080d12"; g.fillRect(0, 0, w, h + entete);
-  g.fillStyle = "#4dff9a";
+  g.fillStyle = "#39ff88";
   g.font = '13px "IBM Plex Mono", ui-monospace, monospace';
   g.textBaseline = "middle"; g.textAlign = "left";
   g.fillText(texteLegende() || "Plan de Wessel", 11, entete / 2);
-  g.fillStyle = "#1a5638";
+  g.fillStyle = "#1f6b48";
   g.textAlign = "right";
   g.fillText("plan de Wessel", w - 11, entete / 2);
   g.drawImage(cv, 0, entete, w, h);
@@ -2108,8 +2098,8 @@ function drawShapeMode() {
   const L = formeCourante();
   if (L) {
     ctx.save();
-    ctx.strokeStyle = "#4dff9a"; ctx.lineWidth = 1.6;
-    ctx.shadowColor = "#4dff9a"; ctx.shadowBlur = 8;
+    ctx.strokeStyle = "#39ff88"; ctx.lineWidth = 1.9;
+    ctx.shadowColor = "#39ff88"; ctx.shadowBlur = 18;
     if (mode === "trans") ctx.setLineDash([5, 4]);
     ctx.beginPath();
     const pts = echantillonCourbe(L.conique, 600);
@@ -2118,10 +2108,10 @@ function drawShapeMode() {
     ctx.restore();
     if (mode === "trans") drawImage(pts);
     if (shape === "droite") {
-      poignee(L.P, "P", "#2f9c66", true);
-      poignee(L.Q, "Q", "#2f9c66", true);
+      poignee(L.P, "P", "#35b878", true);
+      poignee(L.Q, "Q", "#35b878", true);
       ctx.save();
-      ctx.strokeStyle = "#2f9c66"; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+      ctx.strokeStyle = "#35b878"; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
       ctx.beginPath(); ctx.moveTo(sx(L.P.re), sy(L.P.im)); ctx.lineTo(sx(L.Q.re), sy(L.Q.im)); ctx.stroke();
       ctx.restore();
     }
@@ -2258,10 +2248,8 @@ function renderQuiz() {
   if (!quiz) { readout.innerHTML = ""; return; }
   if (!quiz.repondu) {
     readout.innerHTML = '<div class="block"><h2>Question</h2><p class="note">' +
-      (quiz.niveau === 1
-        ? "Les courbes sont tracées. Repère leur point commun et touche sa case."
-        : "Rien n'est tracé. Résous l'équation, puis touche la case du résultat.") +
-      " Chaque case mesure une unité de côté.</p></div>";
+      "Le plan est vide : à toi de trouver où se place z. Chaque case mesure une unité de côté. " +
+      "Les droites et le point n'apparaîtront qu'après ta réponse.</p></div>";
     return;
   }
   const etapes = redaction();
@@ -2488,7 +2476,7 @@ const caseDe = (z) => ({ i: Math.floor(z.re - ZONE.min), j: Math.floor(z.im - ZO
 function nouvelleQuestion() {
   const ex = tirerExercice();
   if (!ex) { document.getElementById("quizmsg").textContent = "tirage impossible, réessaie"; return; }
-  quiz = { ...ex, repondu: false, choix: null, niveau: quiz ? quiz.niveau : 1 };
+  quiz = { ...ex, repondu: false, choix: null };
   state.conds = ex.conds;
   state.sol = null;
   cadrerQuiz();
@@ -2507,9 +2495,7 @@ function majQuiz() {
   if (!quiz) { msg.className = "quizmsg"; msg.textContent = ""; return; }
   if (!quiz.repondu) {
     msg.className = "quizmsg";
-    msg.textContent = quiz.niveau === 1
-      ? "Touche la case où les courbes se croisent."
-      : "Calcule, puis touche la case où se trouve z.";
+    msg.textContent = "Résous l'équation, puis touche la case du résultat.";
     return;
   }
   msg.className = "quizmsg " + (quiz.juste ? "bon" : "rate");
@@ -2539,7 +2525,7 @@ function repondre(z) {
 function drawQuiz() {
   const w = W(), h = H(), p = ZONE.min, n = ZONE.n;
   ctx.save();
-  ctx.strokeStyle = "#12361f"; ctx.lineWidth = 1;
+  ctx.strokeStyle = "#164a2a"; ctx.lineWidth = 1;
   ctx.beginPath();
   for (let i = 0; i <= n; i++) {
     const x = Math.round(sx(p + i)) + 0.5, y = Math.round(sy(p + i)) + 0.5;
@@ -2549,12 +2535,11 @@ function drawQuiz() {
   ctx.stroke();
   ctx.restore();
 
-  if (quiz && quiz.niveau === 1 && state.conds) {
-    state.conds.forEach((c, idx) => (c.curves || []).forEach(k => drawCurve(k, idx === 0 ? "#4dff9a" : "#7de3ff", c)));
-  }
   if (quiz && quiz.repondu) {
+    /* les courbes n'apparaissent qu'une fois la réponse donnée */
+    state.conds.forEach((c, idx) => (c.curves || []).forEach(k => drawCurve(k, idx === 0 ? "#39ff88" : "#7de3ff", c)));
     const bonne = caseDe(quiz.z0);
-    surligneCase(bonne, "#4dff9a");
+    surligneCase(bonne, "#39ff88");
     if (!quiz.juste) surligneCase(quiz.choix, "#ff6a5e");
     drawPoint(quiz.z0, 0, 1);
   }
@@ -2563,7 +2548,7 @@ function surligneCase(c, col) {
   const x = sx(ZONE.min + c.i), y = sy(ZONE.min + c.j + 1), t = view.scale;
   ctx.save();
   ctx.strokeStyle = col; ctx.lineWidth = 2;
-  ctx.fillStyle = col === "#4dff9a" ? "rgba(77,255,154,.16)" : "rgba(255,106,94,.16)";
+  ctx.fillStyle = col === "#39ff88" ? "rgba(57,255,136,.18)" : "rgba(255,106,94,.16)";
   ctx.fillRect(x, y, t, t);
   ctx.strokeRect(x + 1, y + 1, t - 2, t - 2);
   ctx.restore();
@@ -2575,12 +2560,6 @@ cv.addEventListener("click", (e) => {
   repondre(C(mx(e.clientX - r.left), my(e.clientY - r.top)));
 });
 document.getElementById("suivant").addEventListener("click", nouvelleQuestion);
-document.getElementById("niveaux").addEventListener("click", (e) => {
-  const b = e.target.closest("button"); if (!b) return;
-  document.querySelectorAll("#niveaux button").forEach(x => x.classList.toggle("on", x === b));
-  if (quiz) quiz.niveau = Number(b.dataset.niv);
-  nouvelleQuestion();
-});
 
 window.addEventListener("resize", resize);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
