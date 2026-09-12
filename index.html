@@ -186,7 +186,9 @@ body{
   background:#02050a;
 }
 canvas{display:block;width:100%;height:auto;touch-action:none}
+@keyframes souffle{0%,100%{opacity:1}44%{opacity:.8}52%{opacity:.93}}
 .scanlines{
+  animation:souffle 6.5s ease-in-out infinite;
   position:absolute;inset:0;pointer-events:none;
   background:repeating-linear-gradient(to bottom,rgba(0,0,0,.4) 0 1px,transparent 1px 3px);
   mix-blend-mode:multiply;
@@ -205,6 +207,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
   border-radius:3px;cursor:pointer;
 }
 .scope-bar button:active{background:var(--phos);color:var(--void)}
+.scope-bar button.on{background:rgba(57,255,136,.16);color:var(--phos);border-color:var(--phos-dim)}
 .scope-bar button:focus-visible{outline:2px solid var(--phos);outline-offset:1px}
 
 /* ---------- lecture ---------- */
@@ -287,6 +290,7 @@ footer a{color:var(--phos-dim)}
           <button type="button" id="fit">CADRER</button>
           <button type="button" id="copier">COPIER</button>
           <button type="button" id="png">PNG</button>
+          <button type="button" id="son" aria-pressed="false">SON</button>
         </span>
       </div>
     </section>
@@ -1285,7 +1289,12 @@ function z2html(z) {
   if (re === 0) return (im < 0 ? "-" : "") + num2html(Math.abs(im), "i");
   return num2html(re) + (im < 0 ? " &minus; " : " + ") + num2html(Math.abs(im), "i");
 }
-const z2short = (z) => round(z.re, 3) + (z.im < 0 ? " - " : " + ") + Math.abs(round(z.im, 3)) + "i";
+function z2short(z) {
+  const re = round(z.re, 3), im = round(z.im, 3);
+  if (im === 0) return String(re);
+  if (re === 0) return (im < 0 ? "-" : "") + (Math.abs(im) === 1 ? "" : Math.abs(im)) + "i";
+  return re + (im < 0 ? " - " : " + ") + (Math.abs(im) === 1 ? "" : Math.abs(im)) + "i";
+}
 
 /* Met une liste de rationnels au meme denominateur, puis simplifie :
    x - 9y/8 = -7/8  devient  8x - 9y = -7. */
@@ -1374,8 +1383,10 @@ function fmtTick(v) {
 }
 function fmtImTick(v) { const t = fmtTick(v); return t === "1" ? "i" : t === "-1" ? "-i" : t + "i"; }
 
+let etiquettes = [];
 function draw() {
   const w = W(), h = H();
+  etiquettes = [];
   ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = "#02050a"; ctx.fillRect(0, 0, w, h);
 
@@ -1579,10 +1590,17 @@ function drawPoint(z, k, total) {
   ctx.font = '12px "IBM Plex Mono", monospace';
   ctx.textBaseline = "bottom";
   const label = (total > 1 ? "z" + (k + 1) + " = " : "z = ") + z2short(z);
-  const ecart = 26;                                  /* au-dela du viseur et de la case */
-  const left = px + ecart + ctx.measureText(label).width > W() - 34;
-  ctx.textAlign = left ? "right" : "left";
-  ctx.fillText(label, px + (left ? -ecart : ecart), py - 14);
+  const larg = ctx.measureText(label).width, ecart = 26;
+  const gauche = px + ecart + larg > W() - 34;
+  const x0 = gauche ? px - ecart - larg : px + ecart;
+  let y0 = py - 14;
+  /* deux solutions voisines écrivaient leurs étiquettes l'une sur l'autre */
+  let garde = 0;
+  while (garde++ < 12 && etiquettes.some(e => x0 < e.x + e.w + 6 && x0 + larg + 6 > e.x && Math.abs(y0 - e.y) < 15))
+    y0 += 16;
+  etiquettes.push({ x: x0, y: y0, w: larg });
+  ctx.textAlign = "left";
+  ctx.fillText(label, x0, y0);
   ctx.restore();
 }
 
@@ -1675,6 +1693,66 @@ function zoomAt(px, py, k) {
   draw();
 }
 document.getElementById("fit").addEventListener("click", () => { if (mode === "quiz") cadrerQuiz(); else fitView(); });
+
+/* ---------- son : bips du quiz et bourdonnement de tube ---------- */
+let ctxAudio = null, ronronnement = null, son = false;
+try { son = localStorage.getItem("wessel_son") === "on"; } catch (e) { /* stockage indisponible */ }
+
+function audio() {
+  try {
+    if (!ctxAudio) ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctxAudio.state === "suspended") ctxAudio.resume();
+    return ctxAudio;
+  } catch (e) { return null; }
+}
+function bruit(type) {
+  if (!son) return;
+  const a = audio(); if (!a) return;
+  const t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+  o.connect(g); g.connect(a.destination);
+  if (type === "bon") {
+    o.type = "square";
+    o.frequency.setValueAtTime(660, t);
+    o.frequency.setValueAtTime(990, t + 0.08);
+    g.gain.setValueAtTime(0.05, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    o.start(t); o.stop(t + 0.24);
+  } else {
+    o.type = "sawtooth";
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(70, t + 0.25);
+    g.gain.setValueAtTime(0.045, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    o.start(t); o.stop(t + 0.32);
+  }
+}
+/* Le bourdonnement ne tourne qu'en mode quiz : pendant un calcul, c'est du bruit. */
+function ronron(actif) {
+  if (!son || !actif) {
+    if (ronronnement) { try { ronronnement.stop(); } catch (e) { /* déjà arrêté */ } ronronnement = null; }
+    return;
+  }
+  if (ronronnement) return;
+  const a = audio(); if (!a) return;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = "sine"; o.frequency.value = 62;
+  g.gain.value = 0.012;
+  o.connect(g); g.connect(a.destination);
+  o.start();
+  ronronnement = o;
+}
+const boutonSon = document.getElementById("son");
+function majSon() {
+  boutonSon.classList.toggle("on", son);
+  boutonSon.setAttribute("aria-pressed", String(son));
+  ronron(mode === "quiz");
+}
+boutonSon.addEventListener("click", () => {
+  son = !son;
+  try { localStorage.setItem("wessel_son", son ? "on" : "off"); } catch (e) { /* ignore */ }
+  majSon();
+  if (son) bruit("bon");
+});
 
 /* ---------- export de l'image ---------- */
 function texteLegende() {
@@ -2248,14 +2326,17 @@ function renderQuiz() {
   if (!quiz) { readout.innerHTML = ""; return; }
   if (!quiz.repondu) {
     readout.innerHTML = '<div class="block"><h2>Question</h2><p class="note">' +
-      "Le plan est vide : à toi de trouver où se place z. Chaque case mesure une unité de côté. " +
+      (quiz.sols.length > 1
+        ? "Cette équation a " + quiz.sols.length + " solutions : touche la case de n'importe laquelle. "
+        : "Le plan est vide : à toi de trouver où se place z. ") +
+      "Chaque case mesure une unité de côté. " +
       "Les droites et le point n'apparaîtront qu'après ta réponse.</p></div>";
     return;
   }
   const etapes = redaction();
   readout.innerHTML =
-    '<div class="sol"><span class="tag">' + (quiz.juste ? "Bonne réponse" : "La réponse était") + "</span>z = " +
-    z2html(quiz.z0) + "</div>" +
+    '<div class="sol"><span class="tag">' + (quiz.juste ? "Bonne réponse" : "La réponse était") + "</span>" +
+    (quiz.sols.length > 1 ? "" : "z = ") + quiz.sols.map(z2html).join(" &nbsp;et&nbsp; ") + "</div>" +
     (etapes ? '<div class="block"><h2>Rédaction</h2><ol class="redac"><li>' + etapes.join("</li><li>") + "</li></ol></div>" : "");
 }
 
@@ -2308,6 +2389,7 @@ function setMode(m) {
   linepanel.hidden = (m === "eq" || m === "quiz");
   transpanel.hidden = m !== "trans";
   quizpanel.hidden = m !== "quiz";
+  ronron(m === "quiz");
   if (m === "quiz") { nouvelleQuestion(); render(); }
   else if (m === "eq") run(false);
   else { renderShape(); fitShape(); }
@@ -2453,19 +2535,56 @@ function familleMediatrice() {
   };
 }
 
+function familleRacines() {
+  const n = piocher([2, 2, 3, 3, 4]);
+  const r = piocher([1, 2, 2, 3]);
+  const signe = piocher([1, -1]);
+  const w = signe * Math.pow(r, n);
+  return { src1: "z^" + n + " = " + w, src2: "" };
+}
+function familleCercle() {
+  const a = C(entier(-1, 1), entier(-1, 1));
+  const cas = piocher([
+    { r: 1, d: 0, e: 1 }, { r: 2, d: 0, e: 2 },
+    { r: 5, d: 3, e: 4 }, { r: 5, d: 4, e: 3 }
+  ]);
+  const vertical = Math.random() < 0.5;
+  const decal = piocher([1, -1]) * cas.d;
+  return {
+    src1: "|z - (" + texteC(a) + ")| = " + cas.r,
+    src2: vertical ? "Re(z) = " + (a.re + decal) : "Im(z) = " + (a.im + decal)
+  };
+}
+
+/* Un point trop près d'un bord de case rendrait la réponse ambiguë. */
+function bienDansSaCase(z) {
+  for (const v of [z.re, z.im]) {
+    const f = ((v - ZONE.min) % 1 + 1) % 1;
+    if (f < 0.15 || f > 0.85) return false;
+    if (v < ZONE.min + 0.2 || v > ZONE.min + ZONE.n - 0.2) return false;
+  }
+  return true;
+}
+
 /* On tire, puis on RÉSOUT avec le moteur : l'exercice n'est retenu que si
    le solveur retrouve exactement le point voulu. */
 function tirerExercice() {
-  for (let essai = 0; essai < 40; essai++) {
-    const ex = Math.random() < 0.6 ? familleLineaire() : familleMediatrice();
+  for (let essai = 0; essai < 60; essai++) {
+    const tirage = Math.random();
+    const ex = tirage < 0.35 ? familleLineaire()
+             : tirage < 0.60 ? familleMediatrice()
+             : tirage < 0.82 ? familleRacines()
+             : familleCercle();
     try {
       const conds = [analyse(ex.src1)];
       if (ex.src2) conds.push(analyse(ex.src2));
       const sol = solveAll(conds);
-      if (sol.kind !== "points" || sol.pts.length !== 1) continue;
-      if (cabs(csub(sol.pts[0], ex.z0)) > 1e-9) continue;
-      if (Math.abs(ex.z0.re) > 3.5 || Math.abs(ex.z0.im) > 3.5) continue;
-      return { ...ex, conds, sol };
+      if (sol.kind !== "points" || !sol.pts.length || sol.pts.length > 4) continue;
+      if (sol.approx) continue;                       /* le quiz reste sur de l'exact */
+      if (!sol.pts.every(bienDansSaCase)) continue;
+      /* pour les familles où la réponse était choisie d'avance, on la recoupe */
+      if (ex.z0 && !sol.pts.some(z => cabs(csub(z, ex.z0)) < 1e-9)) continue;
+      return { ...ex, conds, sol, sols: sol.pts };
     } catch (e) { /* tirage invalide : on recommence */ }
   }
   return null;
@@ -2495,18 +2614,22 @@ function majQuiz() {
   if (!quiz) { msg.className = "quizmsg"; msg.textContent = ""; return; }
   if (!quiz.repondu) {
     msg.className = "quizmsg";
-    msg.textContent = "Résous l'équation, puis touche la case du résultat.";
+    msg.textContent = quiz.sols.length > 1
+      ? "Plusieurs solutions : touche la case de l'une d'elles."
+      : "Résous l'équation, puis touche la case du résultat.";
     return;
   }
   msg.className = "quizmsg " + (quiz.juste ? "bon" : "rate");
-  msg.innerHTML = (quiz.juste ? "Exact. " : "Raté. ") + "z = " + z2html(quiz.z0);
+  msg.innerHTML = (quiz.juste ? "Exact. " : "Raté. ") +
+    (quiz.sols.length > 1 ? "Solutions : " : "z = ") +
+    quiz.sols.map(z2html).join(" &nbsp;et&nbsp; ");
 }
 function repondre(z) {
   if (!quiz || quiz.repondu) return;
-  const c = caseDe(z), bonne = caseDe(quiz.z0);
+  const c = caseDe(z);
   if (c.i < 0 || c.i >= ZONE.n || c.j < 0 || c.j >= ZONE.n) return;
   quiz.choix = c;
-  quiz.juste = (c.i === bonne.i && c.j === bonne.j);
+  quiz.juste = quiz.sols.some(w => { const b = caseDe(w); return b.i === c.i && b.j === c.j; });
   quiz.repondu = true;
   score.total++;
   if (quiz.juste) {
@@ -2520,6 +2643,7 @@ function repondre(z) {
   draw();
   majQuiz();
   render();
+  bruit(quiz.juste ? "bon" : "rate");
 }
 
 function drawQuiz() {
@@ -2538,10 +2662,9 @@ function drawQuiz() {
   if (quiz && quiz.repondu) {
     /* les courbes n'apparaissent qu'une fois la réponse donnée */
     state.conds.forEach((c, idx) => (c.curves || []).forEach(k => drawCurve(k, idx === 0 ? "#39ff88" : "#7de3ff", c)));
-    const bonne = caseDe(quiz.z0);
-    surligneCase(bonne, "#39ff88");
+    quiz.sols.forEach(w => surligneCase(caseDe(w), "#39ff88"));
     if (!quiz.juste) surligneCase(quiz.choix, "#ff6a5e");
-    drawPoint(quiz.z0, 0, 1);
+    quiz.sols.forEach((w, k) => drawPoint(w, k, quiz.sols.length));
   }
 }
 function surligneCase(c, col) {
@@ -2561,6 +2684,7 @@ cv.addEventListener("click", (e) => {
 });
 document.getElementById("suivant").addEventListener("click", nouvelleQuestion);
 
+majSon();
 window.addEventListener("resize", resize);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
 resize();
