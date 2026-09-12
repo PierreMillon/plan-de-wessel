@@ -63,10 +63,11 @@ body{
 @media(min-width:920px){
   .work{
     display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);
-    grid-template-areas:"console scope" "readout scope" "advanced scope";
+    grid-template-areas:"modes scope" "console scope" "readout scope" "advanced scope";
     align-items:start;gap:22px;
   }
   .scope{grid-area:scope;position:sticky;top:18px}
+  .modes{grid-area:modes}
   .console{grid-area:console}
   .readout{grid-area:readout}
   .advanced{grid-area:advanced}
@@ -126,6 +127,21 @@ body{
 }
 .keypad button:active{background:var(--phos);color:var(--void);border-color:var(--phos)}
 .keypad button:focus-visible{outline:2px solid var(--phos);outline-offset:1px}
+
+.quizpanel{display:flex;flex-direction:column;gap:10px}
+.quizhaut{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.quizscore{font-size:.9rem;color:var(--phos);letter-spacing:.04em}
+.quizscore b{color:var(--solve)}
+.niveaux{display:flex;gap:5px}
+.niveaux button{
+  background:var(--panel-2);border:1px solid var(--edge);color:var(--phos-dim);
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;
+  padding:7px 10px;border-radius:3px;cursor:pointer;
+}
+.niveaux button.on{background:rgba(77,255,154,.12);color:var(--phos);border-color:var(--phos-dim)}
+.quizmsg{margin:0;font-size:.95rem;min-height:1.5em;color:var(--phos-dim)}
+.quizmsg.bon{color:var(--phos)}
+.quizmsg.rate{color:var(--alert)}
 
 .advanced{border:1px solid var(--edge);border-radius:3px;background:var(--panel)}
 .advanced summary{
@@ -313,17 +329,30 @@ footer a{color:var(--phos-dim)}
       </div>
     </section>
 
+    <div class="modes" id="modes">
+      <button type="button" id="mEq" class="on">Équation</button>
+      <button type="button" id="mLine">Au doigt</button>
+      <button type="button" id="mTrans">Transformer</button>
+      <button type="button" id="mQuiz">Quiz</button>
+    </div>
+
+    <section class="quizpanel" id="quizpanel" hidden>
+      <div class="quizhaut">
+        <span class="quizscore" id="quizscore">&nbsp;</span>
+        <span class="niveaux" id="niveaux">
+          <button type="button" data-niv="1" class="on">Repérage</button>
+          <button type="button" data-niv="2">Calcul</button>
+        </span>
+      </div>
+      <p class="quizmsg" id="quizmsg">&nbsp;</p>
+      <button type="button" class="send" id="suivant">Nouvelle question</button>
+    </section>
+
     <section class="readout" id="readout"></section>
 
     <details class="advanced" id="adv">
       <summary>Avancé<span class="chev"></span></summary>
       <div class="advbody">
-
-        <div class="modes" id="modes">
-          <button type="button" id="mEq" class="on">Équation</button>
-          <button type="button" id="mLine">Au doigt</button>
-          <button type="button" id="mTrans">Transformer</button>
-        </div>
 
         <div class="linepanel" id="linepanel" hidden>
           <div class="shapes" id="shapes">
@@ -1386,6 +1415,7 @@ function draw() {
   ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText("Re", w - 8, h - 6);
   ctx.textAlign = "left";  ctx.textBaseline = "top";    ctx.fillText("Im", 8, 6);
 
+  if (mode === "quiz") { drawQuiz(); majTete(); return; }
   if (mode !== "eq") { drawShapeMode(); majTete(); return; }
 
   const ineqs = state.conds.filter(c => c.ineq && !c.error);
@@ -1617,6 +1647,7 @@ cv.addEventListener("pointerdown", e => {
   }
 });
 cv.addEventListener("pointermove", e => {
+  if (mode === "quiz") return;
   if (!pointers.has(e.pointerId)) return;
   const prev = pointers.get(e.pointerId);
   pointers.set(e.pointerId, e);
@@ -1641,6 +1672,7 @@ cv.addEventListener("pointermove", e => {
 ["pointerup", "pointercancel", "pointerleave"].forEach(ev =>
   cv.addEventListener(ev, e => { pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null; if (!pointers.size) dragging = null; }));
 cv.addEventListener("wheel", e => {
+  if (mode === "quiz") return;
   e.preventDefault();
   const r = cv.getBoundingClientRect();
   zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.0016));
@@ -1652,7 +1684,7 @@ function zoomAt(px, py, k) {
   view.cy = by + (py - H() / 2) / view.scale;
   draw();
 }
-document.getElementById("fit").addEventListener("click", fitView);
+document.getElementById("fit").addEventListener("click", () => { if (mode === "quiz") cadrerQuiz(); else fitView(); });
 
 /* ---------- export de l'image ---------- */
 function texteLegende() {
@@ -1904,6 +1936,7 @@ function redaction() {
 }
 
 function render() {
+  if (mode === "quiz") return renderQuiz();
   if (mode !== "eq") return renderShape();
   const blocks = [];
   state.conds.forEach((c, idx) => {
@@ -2220,6 +2253,24 @@ function renderShape() {
   readout.innerHTML = bloc;
 }
 
+/* ---------- affichage du quiz ---------- */
+function renderQuiz() {
+  if (!quiz) { readout.innerHTML = ""; return; }
+  if (!quiz.repondu) {
+    readout.innerHTML = '<div class="block"><h2>Question</h2><p class="note">' +
+      (quiz.niveau === 1
+        ? "Les courbes sont tracées. Repère leur point commun et touche sa case."
+        : "Rien n'est tracé. Résous l'équation, puis touche la case du résultat.") +
+      " Chaque case mesure une unité de côté.</p></div>";
+    return;
+  }
+  const etapes = redaction();
+  readout.innerHTML =
+    '<div class="sol"><span class="tag">' + (quiz.juste ? "Bonne réponse" : "La réponse était") + "</span>z = " +
+    z2html(quiz.z0) + "</div>" +
+    (etapes ? '<div class="block"><h2>Rédaction</h2><ol class="redac"><li>' + etapes.join("</li><li>") + "</li></ol></div>" : "");
+}
+
 /* ---------- bandeau au-dessus du graphique ---------- */
 function prettyEq(src) {
   return esc(src).replace(/&lt;=/g, "\u2264").replace(/>=/g, "\u2265")
@@ -2228,6 +2279,14 @@ function prettyEq(src) {
 }
 function majTete() {
   const tete = document.getElementById("scopehead");
+  if (mode === "quiz") {
+    if (!quiz) { tete.innerHTML = '<div class="hint">quiz</div>'; return; }
+    tete.innerHTML = quiz.conds.map((c, i) =>
+      '<div class="eqline' + (i ? " beam" : "") + '"><span class="pip"></span><span class="txt">' +
+      prettyEq(c.src) + "</span></div>").join("") +
+      '<div class="hint">' + (quiz.repondu ? "touche Nouvelle question" : "touche la bonne case") + "</div>";
+    return;
+  }
   if (mode !== "eq") {
     const L = formeCourante();
     const txt = L ? conicEq2html(L.conique) : "points confondus";
@@ -2245,6 +2304,7 @@ function majTete() {
 
 /* ---------- commutateurs ---------- */
 const mEq = document.getElementById("mEq"), mLine = document.getElementById("mLine"), mTrans = document.getElementById("mTrans");
+const mQuiz = document.getElementById("mQuiz"), quizpanel = document.getElementById("quizpanel");
 const eqpanel = document.getElementById("eqpanel"), linepanel = document.getElementById("linepanel");
 const transpanel = document.getElementById("transpanel"), samplesBox = document.getElementById("samplesBox");
 const adv = document.getElementById("adv");
@@ -2254,15 +2314,20 @@ function setMode(m) {
   mEq.classList.toggle("on", m === "eq");
   mLine.classList.toggle("on", m === "line");
   mTrans.classList.toggle("on", m === "trans");
+  mQuiz.classList.toggle("on", m === "quiz");
   eqpanel.hidden = m !== "eq";
   samplesBox.hidden = m !== "eq";
-  linepanel.hidden = m === "eq";
+  linepanel.hidden = (m === "eq" || m === "quiz");
   transpanel.hidden = m !== "trans";
-  if (m === "eq") run(false); else { renderShape(); fitShape(); }
+  quizpanel.hidden = m !== "quiz";
+  if (m === "quiz") { nouvelleQuestion(); render(); }
+  else if (m === "eq") run(false);
+  else { renderShape(); fitShape(); }
 }
 mEq.addEventListener("click", () => setMode("eq"));
 mLine.addEventListener("click", () => setMode("line"));
 mTrans.addEventListener("click", () => setMode("trans"));
+mQuiz.addEventListener("click", () => setMode("quiz"));
 document.getElementById("shapes").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
   shape = b.dataset.shape;
@@ -2329,6 +2394,192 @@ TRANSAMPLES.forEach(t => {
 try { if (localStorage.getItem("wessel_adv") === "open") adv.open = true; } catch (e) { /* stockage indisponible */ }
 adv.addEventListener("toggle", () => {
   try { localStorage.setItem("wessel_adv", adv.open ? "open" : "closed"); } catch (e) { /* ignore */ }
+});
+
+/* ==================================================================
+   13. Quiz : trouver la zone où se cache la solution
+   ================================================================== */
+const ZONE = { min: -4.5, n: 9 };              /* 9 x 9 cases de 1 unité */
+let quiz = null;
+let score = { juste: 0, total: 0, serie: 0, record: 0 };
+try { score.record = Number(localStorage.getItem("wessel_record")) || 0; } catch (e) { /* stockage indisponible */ }
+
+/* --- écriture d'un complexe entier, relisible par l'analyseur --- */
+function texteC(c) {
+  const a = Math.round(c.re), b = Math.round(c.im);
+  if (b === 0) return String(a);
+  const partIm = (Math.abs(b) === 1 ? "" : String(Math.abs(b))) + "i";
+  if (a === 0) return (b < 0 ? "-" : "") + partIm;
+  return a + (b < 0 ? "-" : "+") + partIm;
+}
+function termeZ(c) {
+  if (czero(c)) return "";
+  if (czero(csub(c, ONE))) return "z";
+  if (czero(cadd(c, ONE))) return "-z";
+  const t = texteC(c);
+  return (Math.abs(c.re) < 1e-12 || Math.abs(c.im) < 1e-12) ? t + "z" : "(" + t + ")z";
+}
+function joindre(t1, t2) {
+  if (!t1) return t2;
+  if (!t2) return t1;
+  return t2.charAt(0) === "-" ? t1 + " - " + t2.slice(1) : t1 + " + " + t2;
+}
+function membre(a, b, cstAvant) {
+  const tz = termeZ(a), tc = czero(b) ? "" : texteC(b);
+  if (!tz && !tc) return "0";
+  return cstAvant ? joindre(tc, tz) : joindre(tz, tc);
+}
+const entier = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
+const piocher = (t) => t[Math.floor(Math.random() * t.length)];
+
+/* --- les deux familles d'exercices --- */
+function familleLineaire() {
+  const z0 = C(entier(-3, 3), entier(-3, 3));
+  let alpha;
+  do { alpha = C(entier(-2, 2), entier(-2, 2)); } while (czero(alpha));
+  const c = C(-(alpha.re * z0.re - alpha.im * z0.im), -(alpha.re * z0.im + alpha.im * z0.re));
+  const Cc = piocher([C(0), C(1), C(0, 1), C(-1), C(2)]);
+  const A = cadd(alpha, Cc);
+  const B = C(entier(-4, 4));
+  const D = csub(B, c);
+  const g = membre(A, B, Math.random() < 0.5), d = membre(Cc, D, Math.random() < 0.5);
+  return { src1: g + " = " + d, src2: "", z0 };
+}
+function familleMediatrice() {
+  const z0 = C(entier(-3, 3), entier(-3, 3));
+  const jeux = [
+    [[1, 0], [0, 1], [-1, 0], [0, -1]],
+    [[1, 1], [1, -1], [-1, 1], [-1, -1]],
+    [[1, 2], [2, 1], [2, -1], [-1, 2]]
+  ];
+  const jeu = piocher(jeux);
+  const u = piocher(jeu);
+  let v;
+  do { v = piocher(jeu); } while (v[0] === u[0] && v[1] === u[1]);
+  const P = C(z0.re + u[0], z0.im + u[1]), Q = C(z0.re + v[0], z0.im + v[1]);
+  const horizontale = (v[0] - u[0]) !== 0;     /* médiatrice non horizontale */
+  return {
+    src1: "|z - (" + texteC(P) + ")| = |z - (" + texteC(Q) + ")|",
+    src2: horizontale ? "Im(z) = " + Math.round(z0.im) : "Re(z) = " + Math.round(z0.re),
+    z0
+  };
+}
+
+/* On tire, puis on RÉSOUT avec le moteur : l'exercice n'est retenu que si
+   le solveur retrouve exactement le point voulu. */
+function tirerExercice() {
+  for (let essai = 0; essai < 40; essai++) {
+    const ex = Math.random() < 0.6 ? familleLineaire() : familleMediatrice();
+    try {
+      const conds = [analyse(ex.src1)];
+      if (ex.src2) conds.push(analyse(ex.src2));
+      const sol = solveAll(conds);
+      if (sol.kind !== "points" || sol.pts.length !== 1) continue;
+      if (cabs(csub(sol.pts[0], ex.z0)) > 1e-9) continue;
+      if (Math.abs(ex.z0.re) > 3.5 || Math.abs(ex.z0.im) > 3.5) continue;
+      return { ...ex, conds, sol };
+    } catch (e) { /* tirage invalide : on recommence */ }
+  }
+  return null;
+}
+
+const caseDe = (z) => ({ i: Math.floor(z.re - ZONE.min), j: Math.floor(z.im - ZONE.min) });
+
+function nouvelleQuestion() {
+  const ex = tirerExercice();
+  if (!ex) { document.getElementById("quizmsg").textContent = "tirage impossible, réessaie"; return; }
+  quiz = { ...ex, repondu: false, choix: null, niveau: quiz ? quiz.niveau : 1 };
+  state.conds = ex.conds;
+  state.sol = null;
+  cadrerQuiz();
+  majQuiz();
+}
+function cadrerQuiz() {
+  view.cx = 0; view.cy = 0;
+  view.scale = Math.min(W(), H()) / ZONE.n;
+  draw();
+}
+function majQuiz() {
+  const info = document.getElementById("quizscore");
+  info.innerHTML = "Score <b>" + score.juste + " / " + score.total + "</b> &nbsp;&middot;&nbsp; série " +
+    score.serie + " &nbsp;&middot;&nbsp; record " + score.record;
+  const msg = document.getElementById("quizmsg");
+  if (!quiz) { msg.className = "quizmsg"; msg.textContent = ""; return; }
+  if (!quiz.repondu) {
+    msg.className = "quizmsg";
+    msg.textContent = quiz.niveau === 1
+      ? "Touche la case où les courbes se croisent."
+      : "Calcule, puis touche la case où se trouve z.";
+    return;
+  }
+  msg.className = "quizmsg " + (quiz.juste ? "bon" : "rate");
+  msg.innerHTML = (quiz.juste ? "Exact. " : "Raté. ") + "z = " + z2html(quiz.z0);
+}
+function repondre(z) {
+  if (!quiz || quiz.repondu) return;
+  const c = caseDe(z), bonne = caseDe(quiz.z0);
+  if (c.i < 0 || c.i >= ZONE.n || c.j < 0 || c.j >= ZONE.n) return;
+  quiz.choix = c;
+  quiz.juste = (c.i === bonne.i && c.j === bonne.j);
+  quiz.repondu = true;
+  score.total++;
+  if (quiz.juste) {
+    score.juste++; score.serie++;
+    if (score.serie > score.record) {
+      score.record = score.serie;
+      try { localStorage.setItem("wessel_record", String(score.record)); } catch (e) { /* ignore */ }
+    }
+  } else score.serie = 0;
+  state.sol = quiz.sol;                        /* la solution devient visible */
+  draw();
+  majQuiz();
+  render();
+}
+
+function drawQuiz() {
+  const w = W(), h = H(), p = ZONE.min, n = ZONE.n;
+  ctx.save();
+  ctx.strokeStyle = "#12361f"; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i <= n; i++) {
+    const x = Math.round(sx(p + i)) + 0.5, y = Math.round(sy(p + i)) + 0.5;
+    ctx.moveTo(x, 0); ctx.lineTo(x, h);
+    ctx.moveTo(0, y); ctx.lineTo(w, y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  if (quiz && quiz.niveau === 1 && state.conds) {
+    state.conds.forEach((c, idx) => (c.curves || []).forEach(k => drawCurve(k, idx === 0 ? "#4dff9a" : "#7de3ff", c)));
+  }
+  if (quiz && quiz.repondu) {
+    const bonne = caseDe(quiz.z0);
+    surligneCase(bonne, "#4dff9a");
+    if (!quiz.juste) surligneCase(quiz.choix, "#ff6a5e");
+    drawPoint(quiz.z0, 0, 1);
+  }
+}
+function surligneCase(c, col) {
+  const x = sx(ZONE.min + c.i), y = sy(ZONE.min + c.j + 1), t = view.scale;
+  ctx.save();
+  ctx.strokeStyle = col; ctx.lineWidth = 2;
+  ctx.fillStyle = col === "#4dff9a" ? "rgba(77,255,154,.16)" : "rgba(255,106,94,.16)";
+  ctx.fillRect(x, y, t, t);
+  ctx.strokeRect(x + 1, y + 1, t - 2, t - 2);
+  ctx.restore();
+}
+
+cv.addEventListener("click", (e) => {
+  if (mode !== "quiz") return;
+  const r = cv.getBoundingClientRect();
+  repondre(C(mx(e.clientX - r.left), my(e.clientY - r.top)));
+});
+document.getElementById("suivant").addEventListener("click", nouvelleQuestion);
+document.getElementById("niveaux").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  document.querySelectorAll("#niveaux button").forEach(x => x.classList.toggle("on", x === b));
+  if (quiz) quiz.niveau = Number(b.dataset.niv);
+  nouvelleQuestion();
 });
 
 window.addEventListener("resize", resize);
