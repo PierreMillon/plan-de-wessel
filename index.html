@@ -1001,7 +1001,7 @@ function solveAll(conds) {
   const ineqs = conds.filter(c => c.ineq);
   const egals = conds.filter(c => !c.ineq);
   if (ineqs.length) {
-    if (!egals.length) return { kind: "region", conds: ineqs };
+    if (!egals.length) return regionHabitee(ineqs) ? { kind: "region", conds: ineqs } : { kind: "empty" };
     const base = solveAll(egals);
     if (base.kind === "points") {
       const pts = base.pts.filter(z => ineqs.every(c => holds(c, z)));
@@ -1138,6 +1138,37 @@ function curvePorteUnPoint(cond) {
       if (r.kind !== "points") continue;
       for (const z of r.pts) if (residual(cond, z) < TOL) return true;
     }
+  }
+  return false;
+}
+
+/* Une région peut être vide : |z| < |z| n'a aucun point. On échantillonne
+   avant de l'annoncer, sinon on affiche « une région du plan » pour rien. */
+function regionHabitee(ineqs) {
+  /* d'abord des points tirés des frontières elles-mêmes : une région peut
+     être loin de l'origine, une grille fixe la manquerait */
+  for (const c of ineqs) for (const k of (c.curves || [])) {
+    const genre = kKind(k);
+    if (genre === "cercle" || genre === "point") {
+      const d = kCircle(k), r = Math.max(Math.sqrt(Math.max(d.r2, 0)), 0.5);
+      if (ineqs.every(q => holds(q, C(d.cx, d.cy)))) return true;
+      for (const [ux, uy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [0.71, 0.71], [-0.71, 0.71], [0.71, -0.71], [-0.71, -0.71]])
+        for (const f of [0.5, 0.92, 1.08, 1.7, 3])
+          if (ineqs.every(q => holds(q, C(d.cx + r * f * ux, d.cy + r * f * uy)))) return true;
+    } else if (genre === "droite") {
+      const L = lineData(k);
+      if (!L) continue;
+      const px = -L.c * L.nx, py = -L.c * L.ny, dx = -L.ny, dy = L.nx;
+      for (const t of [-9, -3, -1, 0, 1, 3, 9])
+        for (const e of [-3, -1, -0.2, 0, 0.2, 1, 3])
+          if (ineqs.every(q => holds(q, C(px + t * dx + e * L.nx, py + t * dy + e * L.ny)))) return true;
+    }
+  }
+  /* puis un balayage large, pour les conditions sans frontière conique */
+  for (const R of [4, 16, 64, 512]) {
+    const N = 22;
+    for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++)
+      if (ineqs.every(c => holds(c, C(-R + 2 * R * i / N, -R + 2 * R * j / N)))) return true;
   }
   return false;
 }

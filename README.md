@@ -56,3 +56,20 @@ Celui-ci est pour Wessel.
 
 Un seul fichier HTML, aucune dépendance, fonctionne hors ligne. Pensé pour
 l'iPhone : clavier de symboles, glisser pour déplacer, pincer pour zoomer.
+
+## Tests
+
+```
+node test/moteur.js
+```
+
+79 assertions sur le moteur de calcul, extrait directement de `index.html` et
+exécuté hors navigateur : équations linéaires, racines n-ièmes, coniques,
+tangences, inégalités, écriture des résultats, refus attendus, et le
+générateur d'exercices du quiz recoupé par le solveur lui-même.
+
+Les deux dernières séries sont des épreuves de robustesse : 300 exercices
+tirés au sort puis re-résolus, et 1500 expressions aléatoires qui ne doivent
+ni faire planter le moteur ni produire de point aberrant.
+
+Elles tournent aussi à chaque push, via GitHub Actions.
